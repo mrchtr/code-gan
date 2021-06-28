@@ -5,6 +5,8 @@ import torch
 import os
 from tqdm import tqdm
 
+from utils.Preprocessor import preprocess
+
 
 class CodeDataset(Dataset):
     """
@@ -61,12 +63,13 @@ class CodeDataset(Dataset):
         :return: preprocessed file
         """
         content = content.strip()
+        content = preprocess(content)
         return content
 
     def init_examples(self, text):
         examples = []
         tokenized_text = []
-        n = 5000 # just processing 5000 files
+        n = 5000  # just processing 5000 files
         for i in tqdm(range(0, len(text), n), unit="tokens", position=0, leave=True):
             tokenized_text[-1:-1] = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text[i:i + n]))
             # all list elements to list
@@ -90,7 +93,11 @@ class CodeDataset(Dataset):
             torch.tensor(self.examples[index+1]),
         )
 
-    def get_random_real_sample(self):
+    def get_random_real_sample(self, batch_size):
+        samples = [self.__get_random_sample() for _ in range(batch_size)]
+        return torch.tensor(samples)
+
+    def __get_random_sample(self):
         rand = randint(0, self.__len__())
-        return torch.tensor(self.examples[rand], dtype=torch.float32)
+        return self.examples[rand]
 

@@ -37,7 +37,7 @@ class Trainer:
 
             for batch, (x, y) in enumerate(self.dataloader):
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size)
-                real_data = self.dataset.get_random_real_sample()
+                real_data = self.dataset.get_random_real_sample(self.batch_size)
 
                 self.discriminator.zero_grad()
                 self.generator.zero_grad()
@@ -52,8 +52,20 @@ class Trainer:
                 generator_optimizer.step()
 
                 print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
+            tokenizer = self.dataset.tokenizer
+            print(f"Example: {tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(generated_data[0]))}")
 
     def get_losses(self, d_out_real, d_out_fake):
+        """
+        Calculates the losses based on d_out_real and d_out_fake
+        Discriminator: max log(D(real)) + log ( 1 - D(G(z))
+        Generator: min log (1 - D(G(z)) <-> max log(D(G(z))
+        :param d_out_real:
+        :param d_out_fake:
+        :return: d_loss, g_loss
+            - d_loss: discirminator loss value
+            - g_loss: generator loss value
+        """
         bce_loss = nn.BCEWithLogitsLoss()
         d_loss_real = bce_loss(d_out_real, torch.ones_like(d_out_real))
         d_loss_fake = bce_loss(d_out_fake, torch.zeros_like(d_out_fake))
