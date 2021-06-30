@@ -11,7 +11,7 @@ class Generator(nn.Module):
     """
     def __init__(self):
         super(Generator, self).__init__()
-        self.temperature = 0.5  # todo: should be modifiable parameter -> see paper for details
+        self.temperature = 1.0
 
     def sample(self, context, sequence_length):
         """

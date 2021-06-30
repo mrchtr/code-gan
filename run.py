@@ -30,7 +30,7 @@ if __name__ == '__main__':
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=16, max_epochs=100)
+    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=16, max_epochs=5000)
 
     trainer.train()
 

@@ -63,7 +63,7 @@ class CodeDataset(Dataset):
         :return: preprocessed file
         """
         content = content.strip()
-        content = preprocess(content)
+        #content = preprocess(content)
         return content
 
     def init_examples(self, text):

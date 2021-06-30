@@ -51,9 +51,13 @@ class Trainer:
                 loss_g.backward(retain_graph=True)
                 generator_optimizer.step()
 
-                print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
+                #print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
+
+            self.generator.temperature = self.update_temperature(self.generator.temperature, epoch, self.max_epochs)
             tokenizer = self.dataset.tokenizer
-            print(f"Example: {tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(generated_data[0]))}")
+            if epoch % 1 == 0:
+                print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
+                print(f"Example: {tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(generated_data[0]))}")
 
     def get_losses(self, d_out_real, d_out_fake):
         """
@@ -73,3 +77,13 @@ class Trainer:
         g_loss = -d_loss_fake
 
         return d_loss, g_loss
+
+    def update_temperature(self, temperature, current_epoch, max_epoch):
+        """
+        Updating temperature of generator. For now just linear decrease.
+        :param temperature: current temperature
+        :param current_epoch: current epoch of training
+        :param max_epoch: max epochs of training
+        :return: temperature
+        """
+        return temperature - (current_epoch / max_epoch)

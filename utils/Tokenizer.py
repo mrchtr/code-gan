@@ -38,7 +38,9 @@ class CodeTokenizerResolver:
                                 "<pad>",
                                 "</s>",
                                 "<unk>",
-                                "<mask>"
+                                "<mask>",
+                                "<TAB>",
+                                "<LB>"
                             ])
 
             tokenizer.save_model(path, tokenizer_name)
