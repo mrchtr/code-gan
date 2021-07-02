@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from data.CodeDataset import CodeDataset
 from models.Discriminator import Discriminator
 from models.Generator import Generator
-from utils.Decoder import decode
+import numpy as np
 
 
 class Trainer:
@@ -30,12 +30,12 @@ class Trainer:
         self.dataset: CodeDataset = dataset
         self.dataloader = DataLoader(dataset, batch_size, drop_last=True)
 
-    def train(self, pretraining_generator=False):
+    def train(self, pretraining_generator=True, pretrain_epochs=1):
         """
         Main training loop. Including pretraining and adverserial training
         """
         if pretraining_generator:
-            self._pretrain_generator(self.max_epochs)
+            self._pretrain_generator(pretrain_epochs)
 
         self._adversarial_training()
 
@@ -44,9 +44,11 @@ class Trainer:
         generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
         discriminator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
         for epoch in range(self.max_epochs):
-            for batch, (x,y) in enumerate(self.dataloader):
+            g_losses = []
+            d_losses = []
+            for batch, (x, y) in enumerate(self.dataloader):
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size)
-                real_data = self.dataset.get_random_real_sample(self.batch_size)
+                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, 8)
 
                 self.discriminator.zero_grad()
                 self.generator.zero_grad()
@@ -59,24 +61,32 @@ class Trainer:
                 discriminator_optimizer.step()
                 loss_g.backward(retain_graph=True)
                 generator_optimizer.step()
-
+                g_losses.append(loss_g.item())
+                d_losses.append(loss_d.item())
 
             self.generator.temperature = self.update_temperature(self.generator.temperature, epoch, self.max_epochs)
-            if epoch % 1 == 0:
-                print(f"Epoch: {epoch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
-                print(f"Example: {self.decode_example(generated_data[0])}")
+
+            print(f"Epoch: {epoch}, loss generator: {np.mean(g_losses)}, loss discriminator: {np.mean(d_losses)}")
+            print(f"Example: {self.decode_example(generated_data[0])}")
 
     def _pretrain_generator(self, epochs):
         print("Start pretraining of generator ...")
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
-        for batch, (x, y) in enumerate(self.dataloader):
+        losses = []
+        for epoch in range(epochs):
             hidden = self.generator.init_state(self.batch_size)
-            pred = self.generator.forward(x.flatten(), hidden)
-            loss = criterion(pred, y.view(-1))
-            optimizer.zero_grad()
-            loss.backward(retain_graph=True)
-            optimizer.step()
+            self.generator.train()
+
+            for batch, (x, y) in enumerate(self.dataloader):
+                pred, hidden, next_token = self.generator(x, hidden)
+                loss = criterion(pred, y.view(-1))
+                hidden = hidden[0].detach(), hidden[1].detach()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                losses.append(loss.item())
+            print(f"Finishing epoch {epoch} with loss of {np.mean(losses)}")
 
 
 

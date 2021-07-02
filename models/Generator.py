@@ -77,7 +77,7 @@ class GeneratorLSTM(Generator):
     def __init__(self, n_vocab, embedding_dim, hidden_dim, num_layers=1, drop_prob=0.2):
         """
         :param n_vocab: Size of vocabulary
-        :param embedding_dim: Dimension of the input embedding vector - batch_size * input vector
+        :param embedding_dim: Dimension of the embeddings in the lookup table
         :param hidden_dim: Neurons in a hidden layer
         :param num_layers: Number of layers
         :param sequence_length: sequence length of output
@@ -92,7 +92,7 @@ class GeneratorLSTM(Generator):
 
         self.embedding = nn.Embedding(
             num_embeddings=n_vocab,
-            embedding_dim=embedding_dim,  # size of input vector
+            embedding_dim=embedding_dim,
         )
 
         self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim, batch_first=True)
@@ -104,9 +104,9 @@ class GeneratorLSTM(Generator):
 
         #  output.shape:  batch_size * sequence_length * n_vocab
         gumbel_t = self.add_gumbel(self.fc(output.squeeze(1)))  # gumbel softmax trick proposed by Nie et al. 2019
-        next_token = torch.argmax(gumbel_t, dim=1).detach()  # batch_size * n_vcocab
-        prediction = f.softmax(gumbel_t * self.temperature, dim=-1) # batch_size * n_vocab
-        return prediction, state, next_token, gumbel_t
+        next_token = torch.argmax(gumbel_t, dim=1).detach()  # batch_size * 1
+        prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1) # batch_size * n_vocab
+        return prediction, state, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):
         """
@@ -119,17 +119,14 @@ class GeneratorLSTM(Generator):
         global all_preds # batch_size * seq_len * vocab_size
         num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
         samples = torch.zeros(num_batch * batch_size, sequence_length).long()
-        start_letter = self.random_start_letter()
-        #start_letter = 336
 
         for b in range(num_batch):
             hidden = self.init_state(batch_size)
-            inp = torch.LongTensor([start_letter] * batch_size)
-
+            inp = context
             for i in range(sequence_length):
                 pred, hidden, next_token = self.forward(inp, hidden)
                 samples[b * batch_size:(b + 1) * batch_size, i] = next_token
-                inp = next_token
+                inp = next_token.reshape(batch_size, 1)
         samples = samples[:num_samples]  # num_samples * seq_len
 
         return samples

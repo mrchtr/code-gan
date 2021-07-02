@@ -7,10 +7,11 @@ from tqdm import tqdm
 from data.CodeDataset import CodeDataset
 from models.Generator import GeneratorLSTM
 from utils.Tokenizer import CodeTokenizerResolver
+from torch.utils.data.sampler import SubsetRandomSampler
 
 if __name__ == '__main__':
-    batch_size = 256
-    seq_len = 60
+    batch_size = 8
+    seq_len = 1
     print("Starting testing LSTM Generator")
 
     print("Init tokenizer ...")
@@ -33,41 +34,61 @@ if __name__ == '__main__':
         hidden : (n_layers, sequence_length, hidden_dim) -> {hidden[0].shape}
         """)
 
-    prediction, state, _, _ = generator.forward(x.unsqueeze(0), hidden)
+    prediction, state, _ = generator.forward(x.unsqueeze(0), hidden)
     print(f"X : {x}")
     print(f"Y': {prediction}")
 
     print("Test training ... ")
 
-    dataloader = DataLoader(dataset, batch_size, drop_last=True, shuffle=True)
+    # split train and evaluation
+    validation_split = .2
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(validation_split * dataset_size))
+    train_indices, val_indices = indices[split:], indices[:split]
+    train_sampler = SubsetRandomSampler(train_indices)
+    valid_sampler = SubsetRandomSampler(val_indices)
+    train_loader = DataLoader(dataset, batch_size=batch_size,
+                                               sampler=train_sampler, drop_last=True)
+    validation_loader = DataLoader(dataset, batch_size=batch_size,
+                                                    sampler=valid_sampler, drop_last=True)
 
-    generator.train()
 
-    criterion = nn.CrossEntropyLoss()
+
     criterion = nn.NLLLoss()
 
-    optimizer = optim.Adam(generator.parameters(), lr=0.001)
-    for epoch in range(10):
-        hidden = generator.init_state(batch_size)
-        for batch, (x, y) in tqdm(enumerate(dataloader), ncols=75):
 
-            pred, hidden, next_token, gumbel_t = generator(x, hidden)
-            loss = criterion(pred.transpose(1, 2), y) # do it on gumbel_t instead of prediction
+
+    optimizer = optim.Adam(generator.parameters(), lr=0.015)
+    for epoch in range(100):
+        hidden = generator.init_state(batch_size)
+
+        generator.train()
+        for batch, (x, y) in tqdm(enumerate(train_loader), ncols=75):
+
+            pred, hidden, next_token = generator(x, hidden)
+            loss = criterion(pred, y.view(-1)) # do it on gumbel_t instead of prediction
 
             optimizer.zero_grad()
             hidden = hidden[0].detach(), hidden[1].detach()
             loss.backward()
             optimizer.step()
 
-            # predict
-            if batch % 100 == 0:
-                p = prediction.detach().numpy()
-                token = np.random.choice(dataset.vocab_size(), p=p[0][-1])
-                sample = np.append(x[0].detach().numpy(), token)
-                sample = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(sample))
-                y_1 = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(y[0]))
-                print(f"Sample: {sample} / Should be {y_1}")
-                print({'epoch': epoch, 'batch': batch, 'loss': loss.item()})
+        print({'epoch': epoch, 'batch': batch, 'loss': loss.item()})
+        sample = generator.sample(x, 20, batch_size, num_samples=1)
+        for row in sample:
+            print(row)
+            print(tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(row)))
+
+        generator.eval()
+        val_hidden = generator.init_state(batch_size)
+        val_losses = []
+        for batch, (x,y) in enumerate(validation_loader):
+            out, val_hidden, _ = generator(x, val_hidden)
+            val_loss = criterion(out, y.view(-1))
+            val_losses.append(val_loss.item())
+        print(f"Validation loss: {np.mean(val_losses)}")
+
 
 
 

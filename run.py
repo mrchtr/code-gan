@@ -5,8 +5,8 @@ from train.Trainer import Trainer
 from utils.Tokenizer import CodeTokenizerResolver
 
 training_data = "./demo_code/"
-block_size = 16  # size of training data blocks
-sequence_length = block_size  # length of generated sequences
+block_size = 1  # size of training data blocks
+sequence_length = 8  # length of generated sequences
 embedding_dim = 32  # size of the word vectors in the lookup table - indices are converted to the embedding_dim
 
 def sample_print(tokenizer):
@@ -40,12 +40,12 @@ if __name__ == '__main__':
     # init generator
     n_vocab = dataset.vocab_size()
 
-    generator = GeneratorLSTM(n_vocab=n_vocab, embedding_dim=embedding_dim, hidden_dim=128, num_layers=3)
+    generator = GeneratorLSTM(n_vocab=n_vocab, embedding_dim=embedding_dim, hidden_dim=128, num_layers=1)
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=16, max_epochs=5000, lr=0.0002)
+    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=5000, lr=0.0002)
 
-    trainer.train()
+    trainer.train(pretrain_epochs=2)
 
 
