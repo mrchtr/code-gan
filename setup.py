@@ -1,13 +1,25 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
-    name='code-gan',
+    name='codegan',
     version='0.1.0',
-    packages=find_packages(include=['models', 'train', 'utils', 'data']),
-    install_requires=[
-            'torch',
-            'tqdm',
-            'transformers',
-            'numpy'
-        ]
+    packages=['data', 'models', 'train', 'utils'],
+    install_requires=['transformers',
+                      'numpy',
+                      'torch',
+                      'tqdm'
+                      ],
+    classifiers=[
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+    ]
+
+
 )
