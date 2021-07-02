@@ -63,23 +63,13 @@ class CodeDataset(Dataset):
         :return: preprocessed file
         """
         content = content.strip()
-        #content = preprocess(content)
+        content = preprocess(content)
         return content
 
     def init_examples(self, text):
-        examples = []
-        tokenized_text = []
-        n = 5000  # just processing 5000 files
-        for i in tqdm(range(0, len(text), n), unit="tokens", position=0, leave=True):
-            tokenized_text[-1:-1] = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text[i:i + n]))
-            # all list elements to list
-        for i in tqdm(range(0, len(tokenized_text) - self.block_size + 1, self.block_size), unit="samples", position=0,
-                      leave=True):
-            examples.append(
-                self.tokenizer.build_inputs_with_special_tokens(tokenized_text[i: i + self.block_size])
-            )
+        tokenized_text = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
+        return self.tokenizer.build_inputs_with_special_tokens(tokenized_text)
 
-        return examples
 
     def vocab_size(self):
         return self.tokenizer.vocab_size
@@ -88,9 +78,10 @@ class CodeDataset(Dataset):
         return len(self.examples) - self.block_size
 
     def __getitem__(self, index):
+        offset = index + self.block_size
         return (
-            torch.tensor(self.examples[index]),
-            torch.tensor(self.examples[index+1]),
+            torch.tensor(self.examples[index:offset]),
+            torch.tensor(self.examples[index+1:offset+1]),
         )
 
     def get_random_real_sample(self, batch_size):

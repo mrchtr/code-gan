@@ -10,7 +10,8 @@ class CodeTokenizerResolver:
     CodeTokenizer is a load a byte-lever-tokenizer that is trained on source code.
     If the checkpoint files not exist, the training for the source code tokenizer is started.
     """
-    def __init__(self, path=".", vocab_size=52_000, min_frequency=2, pretrained="code-tokenizer", training_files=None):
+    def __init__(self, path=".", vocab_size=52_000, min_frequency=2, pretrained="code-tokenizer", training_files=None) \
+            -> GPT2Tokenizer:
         """
         :param path: path to pretrained tokenizer checkpoints files
         :param vocab_size: vocabulary size
@@ -40,7 +41,9 @@ class CodeTokenizerResolver:
                                 "<unk>",
                                 "<mask>",
                                 "<TAB>",
-                                "<LB>"
+                                "<LB>",
+                                "<STRING>",
+                                "<INT>"
                             ])
 
             tokenizer.save_model(path, tokenizer_name)

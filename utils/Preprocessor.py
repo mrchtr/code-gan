@@ -7,11 +7,31 @@ def preprocess(inp):
     :param inp: input string.
     :return: preprocessed string
     """
-    inp = remove_comments(inp)
-    inp = replace_tabs(inp)
-    inp = replace_line_breaks(inp)
+    #inp = remove_comments(inp)
+    #inp = replace_tabs(inp)
+    #inp = replace_line_breaks(inp)
+    inp = replace_string_literals(inp)
+    inp = replace_integer_literals(inp)
     return inp
 
+
+def replace_integer_literals(inp):
+    """
+    Replace string literals in given input
+    :param inp:
+    :return:
+    """
+    rgx_list = ['[0-9]+']
+    return clean_text(rgx_list, inp, "<INT>")
+
+def replace_string_literals(inp):
+    """
+    Replace string literals in given input
+    :param inp:
+    :return:
+    """
+    rgx_list = ['("(\.|[^"]) * ")']
+    return clean_text(rgx_list, inp, "<STRING>")
 
 def remove_comments(inp):
     """
@@ -52,6 +72,6 @@ def clean_text(rgx_list, text, replacement=''):
     """
     new_text = text
     for rgx_match in rgx_list:
-        new_text = re.sub(rgx_match, replacement, new_text)
+        new_text = re.sub(rgx_match, str(replacement), str(new_text))
     return new_text
 

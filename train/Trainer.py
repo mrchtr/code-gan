@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from data.CodeDataset import CodeDataset
 from models.Discriminator import Discriminator
 from models.Generator import Generator
+from utils.Decoder import decode
 
 
 class Trainer:
@@ -29,13 +30,21 @@ class Trainer:
         self.dataset: CodeDataset = dataset
         self.dataloader = DataLoader(dataset, batch_size, drop_last=True)
 
-    def train(self):
+    def train(self, pretraining_generator=False):
+        """
+        Main training loop. Including pretraining and adverserial training
+        """
+        if pretraining_generator:
+            self._pretrain_generator(self.max_epochs)
+
+        self._adversarial_training()
+
+    def _adversarial_training(self):
+        print("Start adversarial training ... ")
         generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
         discriminator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
-
         for epoch in range(self.max_epochs):
-
-            for batch, (x, y) in enumerate(self.dataloader):
+            for batch, (x,y) in enumerate(self.dataloader):
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size)
                 real_data = self.dataset.get_random_real_sample(self.batch_size)
 
@@ -51,13 +60,30 @@ class Trainer:
                 loss_g.backward(retain_graph=True)
                 generator_optimizer.step()
 
-                #print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
 
             self.generator.temperature = self.update_temperature(self.generator.temperature, epoch, self.max_epochs)
-            tokenizer = self.dataset.tokenizer
             if epoch % 1 == 0:
-                print(f"Train step: {batch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
-                print(f"Example: {tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(generated_data[0]))}")
+                print(f"Epoch: {epoch}, loss generator: {loss_g}, loss discriminator: {loss_d}")
+                print(f"Example: {self.decode_example(generated_data[0])}")
+
+    def _pretrain_generator(self, epochs):
+        print("Start pretraining of generator ...")
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
+        for batch, (x, y) in enumerate(self.dataloader):
+            hidden = self.generator.init_state(self.batch_size)
+            pred = self.generator.forward(x.flatten(), hidden)
+            loss = criterion(pred, y.view(-1))
+            optimizer.zero_grad()
+            loss.backward(retain_graph=True)
+            optimizer.step()
+
+
+
+    def decode_example(self, inp):
+        tokenizer = self.dataset.tokenizer
+        output = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(inp))
+        return output
 
     def get_losses(self, d_out_real, d_out_fake):
         """
