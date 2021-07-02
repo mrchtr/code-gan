@@ -48,7 +48,7 @@ class Trainer:
             d_losses = []
             for batch, (x, y) in enumerate(self.dataloader):
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size)
-                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, 8)
+                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length)
 
                 self.discriminator.zero_grad()
                 self.generator.zero_grad()
