@@ -40,7 +40,9 @@ if __name__ == '__main__':
     # init generator
     n_vocab = dataset.vocab_size()
 
+
     generator = GeneratorLSTM(n_vocab=n_vocab, embedding_dim=embedding_dim, hidden_dim=128, num_layers=1)
+    print(f"Generator device: {generator.device}")
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer

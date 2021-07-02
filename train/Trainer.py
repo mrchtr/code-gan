@@ -30,6 +30,11 @@ class Trainer:
         self.dataset: CodeDataset = dataset
         self.dataloader = DataLoader(dataset, batch_size, drop_last=True)
 
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.generator = self.generator.to(self.device)
+        self.discriminator = self.discriminator.to(self.device)
+
+
     def train(self, pretraining_generator=True, pretrain_epochs=1):
         """
         Main training loop. Including pretraining and adverserial training
@@ -47,8 +52,11 @@ class Trainer:
             g_losses = []
             d_losses = []
             for batch, (x, y) in enumerate(self.dataloader):
-                generated_data = self.generator.sample(x, self.sequence_length, self.batch_size)
-                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length)
+                x = x.to(self.device)
+                y = y.to(self.device)
+
+                generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(self.device)
 
                 self.discriminator.zero_grad()
                 self.generator.zero_grad()
@@ -79,6 +87,10 @@ class Trainer:
             self.generator.train()
 
             for batch, (x, y) in enumerate(self.dataloader):
+                x = x.to(self.device)
+                y = y.to(self.device)
+                hidden = hidden[0].to(self.device), hidden[1].to(self.device)
+
                 pred, hidden, next_token = self.generator(x, hidden)
                 loss = criterion(pred, y.view(-1))
                 hidden = hidden[0].detach(), hidden[1].detach()
@@ -107,8 +119,8 @@ class Trainer:
             - g_loss: generator loss value
         """
         bce_loss = nn.BCEWithLogitsLoss()
-        d_loss_real = bce_loss(d_out_real, torch.ones_like(d_out_real))
-        d_loss_fake = bce_loss(d_out_fake, torch.zeros_like(d_out_fake))
+        d_loss_real = bce_loss(d_out_real, torch.ones_like(d_out_real).to(self.device))
+        d_loss_fake = bce_loss(d_out_fake, torch.zeros_like(d_out_fake).to(self.device))
         d_loss = d_loss_real + d_loss_fake
         g_loss = -d_loss_fake
 

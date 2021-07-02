@@ -3,7 +3,6 @@ from random import randint
 from torch import nn
 import torch.nn.functional as f
 import torch
-import numpy as np
 from models.RelationalMemory import RelationalMemory
 
 
@@ -15,6 +14,8 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.temperature = 1.0
 
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
     def sample(self, context, sequence_length):
         """
         Sample method that generates a fake sequence based on the given context
@@ -25,9 +26,11 @@ class Generator(nn.Module):
         NotImplementedError()
 
     @staticmethod
-    def add_gumbel(o_t, eps=1e-10):
+    def add_gumbel(o_t, device, eps=1e-10):
         """Add o_t by a vector sampled from Gumbel(0,1)"""
         u = torch.zeros(o_t.size())
+        u = u.to(device)
+
         u.uniform_(0, 1)
         g_t = -torch.log(-torch.log(u + eps) + eps)
         gumbel_t = o_t + g_t
@@ -62,7 +65,7 @@ class GeneratorRelGAN(Generator):
         """
         emb = self.embeddings(x).unsqueeze(1)
         out, hidden = self.rm(emb, hidden)
-        gumbel_t = self.add_gumbel(self.rm2out(out.squeeze(1)))
+        gumbel_t = self.add_gumbel(self.rm2out(out.squeeze(1)), self.device)
         next_token = torch.argmax(gumbel_t, dim=1).detach()
 
         pred = f.softmax(gumbel_t * self.temperature, dim=-1)
@@ -103,7 +106,7 @@ class GeneratorLSTM(Generator):
         output, state = self.lstm(embed, prev_state)  # seq_length * batch_size * input_size
 
         #  output.shape:  batch_size * sequence_length * n_vocab
-        gumbel_t = self.add_gumbel(self.fc(output.squeeze(1)))  # gumbel softmax trick proposed by Nie et al. 2019
+        gumbel_t = self.add_gumbel(self.fc(output.squeeze(1)), self.device)  # gumbel softmax trick proposed by Nie et al. 2019
         next_token = torch.argmax(gumbel_t, dim=1).detach()  # batch_size * 1
         prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1) # batch_size * n_vocab
         return prediction, state, next_token
@@ -119,6 +122,7 @@ class GeneratorLSTM(Generator):
         global all_preds # batch_size * seq_len * vocab_size
         num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
         samples = torch.zeros(num_batch * batch_size, sequence_length).long()
+        samples.to(self.device)
 
         for b in range(num_batch):
             hidden = self.init_state(batch_size)
@@ -135,6 +139,6 @@ class GeneratorLSTM(Generator):
         return randint(1, self.n_vocab-1)
 
     def init_state(self, batch_size):
-        h = torch.zeros(self.num_layers, batch_size, self.hidden_dim)
-        c = torch.zeros(self.num_layers, batch_size, self.hidden_dim)
+        h = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(self.device)
+        c = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(self.device)
         return h, c

@@ -41,6 +41,7 @@ class CNNDiscriminator(Discriminator):
         :param dropout: Dropout rate. Defaul: 0.5
         """
         super(Discriminator, self).__init__()
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.embedding = nn.Embedding(num_embeddings=vocab_size,
