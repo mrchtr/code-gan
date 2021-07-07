@@ -40,48 +40,85 @@ class Trainer:
         Main training loop. Including pretraining and adverserial training
         """
         if pretraining_generator:
-            self._pretrain_generator(pretrain_epochs)
+            pretraining_losses = self._pretrain_generator(pretrain_epochs)
 
-        self._adversarial_training()
+        adversarial_losses_gen, adversarial_losses_dis = self._adversarial_training()
+
+        return pretraining_losses, adversarial_losses_gen, adversarial_losses_dis
 
     def _adversarial_training(self):
         print("Start adversarial training ... ")
         generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
         discriminator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
+        losses_per_epoch_generator = []
+        losses_per_epoch_discriminator = []
         for epoch in range(self.max_epochs):
             g_losses = []
             d_losses = []
             for batch, (x, y) in enumerate(self.dataloader):
                 x = x.to(self.device)
-                y = y.to(self.device)
 
-                generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
-                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(self.device)
+                loss_g = self.adv_train_generator(x, generator_optimizer)
+                loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
 
-                self.discriminator.zero_grad()
-                self.generator.zero_grad()
+                g_losses.append(loss_g)
+                d_losses.append(loss_d)
 
-                discriminator_real_out = self.discriminator(real_data)
-                discriminator_fake_out = self.discriminator(generated_data)
-                loss_g, loss_d = self.get_losses(discriminator_real_out, discriminator_fake_out)
-
-                loss_d.backward(retain_graph=True)
-                discriminator_optimizer.step()
-                loss_g.backward(retain_graph=True)
-                generator_optimizer.step()
-                g_losses.append(loss_g.item())
-                d_losses.append(loss_d.item())
-
+            # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, epoch, self.max_epochs)
 
-            print(f"Epoch: {epoch}, loss generator: {np.mean(g_losses)}, loss discriminator: {np.mean(d_losses)}")
-            print(f"Example: {self.decode_example(generated_data[0])}")
+            if epoch % 10 == 0:
+                print(f"Epoch: {epoch}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
+                generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(self.device)
+                print(f"Generated Example: {self.decode_example(generated_data[0])}")
+                print(f"Real Example: {self.decode_example(real_data[0])}")
+            losses_per_epoch_generator.append(np.mean(g_losses))
+            losses_per_epoch_discriminator.append(np.mean(d_losses))
+
+        return losses_per_epoch_generator, losses_per_epoch_discriminator
+
+    def adv_train_generator(self, x, optimizer):
+        real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(
+            self.device)
+        generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+
+        discriminator_real_out = self.discriminator(real_data)
+        discriminator_fake_out = self.discriminator(generated_data)
+
+        loss_g, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
+
+        self.generator.zero_grad()
+        loss_g.backward(retain_graph=True)
+        optimizer.step()
+
+        return loss_g.item()
+
+    def adv_train_discriminator(self, x, optimizer):
+        losses = []
+        for i in range(5):
+            real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(
+                self.device)
+            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+
+            discriminator_real_out = self.discriminator(real_data)
+            discriminator_fake_out = self.discriminator(generated_data)
+
+            _, loss_d = self.get_losses(discriminator_real_out, discriminator_fake_out)
+
+            self.discriminator.zero_grad()
+            loss_d.backward(retain_graph=True)
+            optimizer.step()
+            losses.append(loss_d.item())
+
+        return np.mean(losses)
 
     def _pretrain_generator(self, epochs):
         print("Start pretraining of generator ...")
         criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
         losses = []
+        loss_per_epoch = []
         for epoch in range(epochs):
             hidden = self.generator.init_state(self.batch_size)
             self.generator.train()
@@ -98,8 +135,13 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.item())
-            print(f"Finishing epoch {epoch} with loss of {np.mean(losses)}")
 
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch} - loss: {np.mean(losses)}")
+
+            loss_per_epoch.append(np.mean(losses))
+
+        return loss_per_epoch
 
 
     def decode_example(self, inp):
@@ -119,10 +161,9 @@ class Trainer:
             - g_loss: generator loss value
         """
         bce_loss = nn.BCEWithLogitsLoss()
-        d_loss_real = bce_loss(d_out_real, torch.ones_like(d_out_real).to(self.device))
-        d_loss_fake = bce_loss(d_out_fake, torch.zeros_like(d_out_fake).to(self.device))
-        d_loss = d_loss_real + d_loss_fake
-        g_loss = -d_loss_fake
+
+        d_loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real)).to(self.device)
+        g_loss = bce_loss(d_out_fake - d_out_real, torch.ones_like(d_out_fake)).to(self.device)
 
         return d_loss, g_loss
 
