@@ -67,7 +67,7 @@ class Trainer:
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, epoch, self.max_epochs)
 
-            if epoch % 10 == 0:
+            if epoch % 1 == 0:
                 print(f"Epoch: {epoch}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
                 real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(self.device)
@@ -175,4 +175,4 @@ class Trainer:
         :param max_epoch: max epochs of training
         :return: temperature
         """
-        return temperature - (current_epoch / max_epoch)
+        return temperature
