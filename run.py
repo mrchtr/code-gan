@@ -10,7 +10,7 @@ sequence_length = 8  # length of generated sequences
 embedding_dim = 32  # size of the word vectors in the lookup table - indices are converted to the embedding_dim
 
 def sample_print(tokenizer):
-    sample = "class Superman:$    def __init__(self):"
+    sample = "I'am a joke ;)"
     tokenized = tokenizer.tokenize(sample)
     input_ids = tokenizer.convert_tokens_to_ids(tokenized)
     output = tokenizer.convert_ids_to_tokens(input_ids)
@@ -29,7 +29,6 @@ if __name__ == '__main__':
     resolver = CodeTokenizerResolver(training_files=training_data, path="./.checkpoints")
     tokenizer = resolver.tokenizer
 
-    print(f"Test tokenizer for 'def' : {tokenizer.convert_tokens_to_ids('def')}")
 
     # init dataset
     print("Init dataset ... ")

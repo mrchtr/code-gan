@@ -35,15 +35,7 @@ class CodeTokenizerResolver:
             tokenizer = ByteLevelBPETokenizer()
             tokenizer.train(files=training_files, vocab_size=vocab_size, min_frequency=min_frequency,
                             special_tokens=[
-                                "<s>",
-                                "<pad>",
-                                "</s>",
-                                "<unk>",
-                                "<mask>",
-                                "<TAB>",
-                                "<LB>",
-                                "<STRING>",
-                                "<INT>"
+                                "<BOF>", "<EOF>"
                             ])
 
             tokenizer.save_model(path, tokenizer_name)

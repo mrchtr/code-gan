@@ -56,12 +56,11 @@ class Trainer:
             g_losses = []
             d_losses = []
             for batch, (x, y) in enumerate(self.dataloader):
-                x = x.to(self.device)
-
+                # x = x.to(self.device) todo: later decide which context to use
+                x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
                 loss_g = self.adv_train_generator(x, generator_optimizer)
                 loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
 
-                g_losses.append(loss_g)
                 d_losses.append(loss_d)
 
             # update temperature each epoch
