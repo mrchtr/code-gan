@@ -32,7 +32,7 @@ if __name__ == '__main__':
     random_str = "".join(letter[randint(0, len(letter)-1)] for x in range(0, seq_len))
     tokenized_random_str = torch.tensor(tokenizer.convert_tokens_to_ids(tokenizer.tokenize(random_str))).reshape(1, seq_len)
 
-    real_sample = dataset.get_random_real_sample(seq_len).reshape(1, seq_len)
+    real_sample = dataset.get_random_real_sample(1, seq_len)
 
     print(random_str)
     print(tokenized_random_str)
@@ -47,8 +47,7 @@ if __name__ == '__main__':
         discriminator.train()
         losses = []
         for batch, _ in enumerate(dataloader):
-            real_sample = dataset.get_random_real_sample(seq_len).reshape(1, seq_len)
-            real_sample_2 = dataset.get_random_real_sample(seq_len).reshape(1, seq_len)
+            real_sample = dataset.get_random_real_sample(32, seq_len)
             random_str = "".join(letter[randint(0, len(letter) - 1)] for x in range(0, seq_len))
             genrated = torch.tensor(
                 tokenizer.convert_tokens_to_ids(tokenizer.tokenize(random_str))).reshape(1, seq_len)

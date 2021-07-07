@@ -69,7 +69,7 @@ class Trainer:
             if epoch % 10 == 0:
                 print(f"Epoch: {epoch}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
-                real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(self.device)
+                real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(self.device)
                 print(f"Generated Example: {self.decode_example(generated_data[0])}")
                 print(f"Real Example: {self.decode_example(real_data[0])}")
             losses_per_epoch_generator.append(np.mean(g_losses))
@@ -78,9 +78,9 @@ class Trainer:
         return losses_per_epoch_generator, losses_per_epoch_discriminator
 
     def adv_train_generator(self, x, optimizer):
-        real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(
+        real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(
             self.device)
-        generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+        generated_data = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=self.batch_size).to(self.device)
 
         discriminator_real_out = self.discriminator(real_data)
         discriminator_fake_out = self.discriminator(generated_data)
@@ -96,9 +96,9 @@ class Trainer:
     def adv_train_discriminator(self, x, optimizer):
         losses = []
         for i in range(5):
-            real_data = self.dataset.get_random_real_sample(self.sequence_length).reshape(1, self.sequence_length).to(
+            real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(
                 self.device)
-            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
+            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=self.batch_size).to(self.device)
 
             discriminator_real_out = self.discriminator(real_data)
             discriminator_fake_out = self.discriminator(generated_data)

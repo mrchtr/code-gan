@@ -84,11 +84,12 @@ class CodeDataset(Dataset):
             torch.tensor(self.examples[index+1:offset+1]),
         )
 
-    def get_random_real_sample(self, batch_size):
-        samples = [self.__get_random_sample() for _ in range(batch_size)]
+    def get_random_real_sample(self, batch_size, seq_len):
+        samples = [self.__get_random_sample(seq_len) for _ in range(batch_size)]
         return torch.tensor(samples)
 
-    def __get_random_sample(self):
-        rand = randint(0, self.__len__())
-        return self.examples[rand]
+    def __get_random_sample(self, seq_len):
+        max_len = self.__len__() - seq_len - 1
+        rand = randint(0, max_len)
+        return self.examples[rand:rand+seq_len]
 
