@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
     print("Init dataset ... ")
     dataset = CodeDataset(root_dir="../demo_code", tokenizer=resolver.tokenizer, block_size=1)
+    dataset_1 = CodeDataset(root_dir="../other_dataset", tokenizer=resolver.tokenizer, block_size=1)
     tokenizer = resolver.tokenizer
     discriminator = CNNDiscriminator(dataset.vocab_size(), 1)
 
@@ -40,6 +41,7 @@ if __name__ == '__main__':
 
     # sample training loop
     dataloader = DataLoader(dataset, batch_size=32,drop_last=True)
+    dataloader_1 = DataLoader(dataset_1, batch_size=32,drop_last=True)
     optimizer = optim.Adam(discriminator.parameters(), lr=0.015)
     bce_loss = nn.BCEWithLogitsLoss()
 
@@ -48,12 +50,13 @@ if __name__ == '__main__':
         losses = []
         for batch, _ in enumerate(dataloader):
             real_sample = dataset.get_random_real_sample(32, seq_len)
+            fake_sample = dataset_1.get_random_real_sample(32, seq_len)
             random_str = "".join(letter[randint(0, len(letter) - 1)] for x in range(0, seq_len))
             genrated = torch.tensor(
                 tokenizer.convert_tokens_to_ids(tokenizer.tokenize(random_str))).reshape(1, seq_len)
 
             d_out_real = discriminator(real_sample)
-            d_out_fake = discriminator(genrated)
+            d_out_fake = discriminator(fake_sample)
 
             loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real))
 

@@ -45,7 +45,7 @@ if __name__ == '__main__':
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01)
+    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=50)
 
     l, l1, l2 = trainer.train(pretrain_epochs=2)
 
