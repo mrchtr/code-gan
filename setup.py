@@ -8,7 +8,8 @@ setup(
                       'numpy',
                       'torch',
                       'tqdm',
-                      'sentencepiece'
+                      'sentencepiece',
+                      'nltk'
                       ],
     classifiers=[
         'Development Status :: 1 - Planning',

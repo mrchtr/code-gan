@@ -7,13 +7,16 @@ from models.Discriminator import Discriminator
 from models.Generator import Generator
 import numpy as np
 
+from utils.FileUtils import create_dir_if_not_exists
+from utils.metrics.Bleu import Bleu
+
 
 class Trainer:
     """
     Holding both models for the adversarial training and the main training loop.
     """
     def __init__(self, generator, discriminator, sequence_length, dataset, batch_size=16, lr=1e-4, max_epochs=10,
-                 nadv_steps=2000, g_steps=1, d_steps=5):
+                 nadv_steps=2000, g_steps=1, d_steps=5, tokenizer=None, test_file=None):
         """
         :param generator: Generator model
         :param discriminator: Discriminator model
@@ -33,6 +36,8 @@ class Trainer:
         self.d_steps = d_steps
         self.dataset: CodeDataset = dataset
         self.dataloader = DataLoader(dataset, batch_size, drop_last=True)
+        self.tokenizer = tokenizer
+        self.test_file = test_file
 
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.generator = self.generator.to(self.device)
@@ -69,18 +74,32 @@ class Trainer:
             d_losses.append(loss_d)
 
             # update temperature each epoch
-            self.generator.temperature = self.update_temperature(self.generator.temperature, i, self.max_epochs)
+            self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
             if i % 10 == 0:
+                metrics = self.evaluate_generator()
                 print(f"Epoch: {i}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
-                generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
-                real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(self.device)
-                #print(f"Generated Example: {self.decode_example(generated_data[0])}")
-                #print(f"Real Example: {self.decode_example(real_data[0])}")
+                print(f"Bleu score: {metrics[0]:.3f} / {metrics[1]:.3f} / {metrics[2]:.3f} / {metrics[3]:.3f}")
             losses_per_epoch_generator.append(np.mean(g_losses))
             losses_per_epoch_discriminator.append(np.mean(d_losses))
 
         return losses_per_epoch_generator, losses_per_epoch_discriminator
+
+    def evaluate_generator(self):
+        create_dir_if_not_exists("sample_dir")
+        sample_dir = "sample_dir/generated_sample.txt"
+        # ---- generate data
+        x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
+        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to(self.device)
+        sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+
+        with open(sample_dir, 'w') as outfile:
+            outfile.write(sample_str)
+        outfile.close()
+
+        # ---- calculate bleu score
+        return self.get_metrics(sample_dir, self.test_file)
+
 
     def adv_train_generator(self, x, optimizer):
         losses = []
@@ -151,11 +170,6 @@ class Trainer:
         return loss_per_epoch
 
 
-    def decode_example(self, inp):
-        tokenizer = self.dataset.tokenizer
-        output = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(inp))
-        return output
-
     def get_losses(self, d_out_real, d_out_fake):
         """
         Calculates the losses based on d_out_real and d_out_fake
@@ -174,7 +188,7 @@ class Trainer:
 
         return d_loss, g_loss
 
-    def update_temperature(self, temperature, i, max_epoch):
+    def update_temperature(self, temperature, i):
         """
         Updating temperature of generator. For now just linear decrease.
         :param temperature: current temperature
@@ -182,5 +196,13 @@ class Trainer:
         :param max_epoch: max epochs of training
         :return: temperature
         """
-        N = 5000
+        N = 5000  # todo implement real method
         return 1 + i / (N - 1) * (temperature - 1)
+
+
+    def get_metrics(self, gen_file, test_file):
+        metrics = []
+        for i in range(2, 6):
+            bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name=f"blue-{i}")
+            metrics.append(bleu.get_bleu())
+        return metrics
