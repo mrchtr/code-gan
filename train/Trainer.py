@@ -2,7 +2,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
-from data.CodeDataset import CodeDataset
+from data.Dataset import CodeDataset
 from models.Discriminator import Discriminator
 from models.Generator import Generator
 import numpy as np
@@ -75,8 +75,8 @@ class Trainer:
                 print(f"Epoch: {i}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
                 generated_data = self.generator.sample(x, self.sequence_length, self.batch_size).to(self.device)
                 real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(self.device)
-                print(f"Generated Example: {self.decode_example(generated_data[0])}")
-                print(f"Real Example: {self.decode_example(real_data[0])}")
+                #print(f"Generated Example: {self.decode_example(generated_data[0])}")
+                #print(f"Real Example: {self.decode_example(real_data[0])}")
             losses_per_epoch_generator.append(np.mean(g_losses))
             losses_per_epoch_discriminator.append(np.mean(d_losses))
 

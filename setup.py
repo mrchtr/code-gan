@@ -7,7 +7,8 @@ setup(
     install_requires=['transformers',
                       'numpy',
                       'torch',
-                      'tqdm'
+                      'tqdm',
+                      'sentencepiece'
                       ],
     classifiers=[
         'Development Status :: 1 - Planning',

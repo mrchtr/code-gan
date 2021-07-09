@@ -7,6 +7,38 @@ from tqdm import tqdm
 
 from utils.Preprocessor import preprocess
 
+class TextDataset(Dataset):
+    """
+    Dataset for training the gan. Holding tokenized text.
+    """
+
+    def __init__(self, block_size, inp):
+        """
+        :param block_size: size of sequences
+        :param inp: input tokens as vector representation
+        """
+
+        self.block_size = block_size
+        self.data = inp
+
+    def __len__(self):
+        return len(self.data) - self.block_size
+
+    def __getitem__(self, index):
+        offset = index + self.block_size
+        return (
+            torch.tensor(self.data[index:offset]),
+            torch.tensor(self.data[index+1:offset+1]),
+        )
+
+    def get_random_real_sample(self, batch_size, seq_len):
+        samples = [self.__get_random_sample(seq_len) for _ in range(batch_size)]
+        return torch.tensor(samples)
+
+    def __get_random_sample(self, seq_len):
+        max_len = self.__len__() - seq_len - 1
+        rand = randint(0, max_len)
+        return self.data[rand:rand+seq_len]
 
 class CodeDataset(Dataset):
     """

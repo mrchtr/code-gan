@@ -1,9 +1,53 @@
+from os.path import exists
+
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import GPT2Tokenizer
 import os.path
-
+import sentencepiece as spm
 from utils.FileUtils import get_all_files, create_dir_if_not_exists
 
+
+class SentencepieceResolver:
+    """
+    Wrapper for a basic byte pair tokenizer based on sentencepiece.
+    """
+
+    def __init__(self, path=".", special_tokens=[], vocab_size=5000, name="m"):
+        """
+        :param path: path to the training files
+        :param special_tokens: special tokens
+        """
+        self.path = path
+        self.special_tokens = special_tokens
+        self.vocab_size = vocab_size
+        self.name = name
+
+        self.tokenizer = None
+
+        self.train()
+        self.load()
+
+    def train(self):
+        if exists(f"{self.name}.model"):
+            print("Skip training. Model with the name already exists.")
+            return
+        self.tokenizer = spm.SentencePieceTrainer.train(input=self.path, model_prefix=self.name, vocab_size=self.vocab_size, user_defined_symbols=self.special_tokens)
+
+    def load(self):
+        sp = spm.SentencePieceProcessor()
+        model = f"{self.name}.model"
+        sp.Load(model)
+        self.tokenizer = sp
+
+    def encode(self, inp):
+        if self.tokenizer is None:
+            return
+        return self.tokenizer.encode(inp)
+
+    def decode(self, inp):
+        if self.tokenizer is None:
+            return
+        return self.tokenizer.decode(inp)
 
 class CodeTokenizerResolver:
     """

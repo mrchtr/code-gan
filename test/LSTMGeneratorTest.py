@@ -4,7 +4,7 @@ import numpy as np
 
 from tqdm import tqdm
 
-from data.CodeDataset import CodeDataset
+from data.Dataset import CodeDataset
 from models.Generator import GeneratorLSTM
 from utils.Tokenizer import CodeTokenizerResolver
 from torch.utils.data.sampler import SubsetRandomSampler

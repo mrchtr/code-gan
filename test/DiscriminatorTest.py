@@ -5,7 +5,7 @@ import torch
 from torch import optim, nn
 from torch.utils.data import DataLoader
 
-from data.CodeDataset import CodeDataset
+from data.Dataset import CodeDataset
 from models.Discriminator import Discriminator, CNNDiscriminator
 from models.Generator import GeneratorLSTM
 from utils.Tokenizer import CodeTokenizerResolver
