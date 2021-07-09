@@ -53,7 +53,7 @@ class Trainer:
     def _adversarial_training(self):
         print("Start adversarial training ... ")
         generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
-        discriminator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
+        discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr)
         losses_per_epoch_generator = []
         losses_per_epoch_discriminator = []
 
@@ -95,7 +95,7 @@ class Trainer:
             loss_g, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
 
             self.generator.zero_grad()
-            loss_g.backward(retain_graph=True)
+            loss_g.backward(retain_graph=False)
             optimizer.step()
             losses.append(loss_g.item())
 
@@ -114,7 +114,7 @@ class Trainer:
             _, loss_d = self.get_losses(discriminator_real_out, discriminator_fake_out)
 
             self.discriminator.zero_grad()
-            loss_d.backward(retain_graph=True)
+            loss_d.backward(retain_graph=False)
             optimizer.step()
             losses.append(loss_d.item())
 

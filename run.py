@@ -24,7 +24,7 @@ if __name__ == '__main__':
         '<INT_LIT>'
     ]
 
-    tokenizer = SentencepieceResolver(path=training_data, vocab_size=50, special_tokens=special_tokens)
+    tokenizer = SentencepieceResolver(path=training_data, vocab_size=1000, special_tokens=special_tokens)
 
     # init dataset
     print("Init dataset ... ")
@@ -42,9 +42,9 @@ if __name__ == '__main__':
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=50)
+    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=1000)
 
-    l, l1, l2 = trainer.train(pretrain_epochs=2)
+    l, l1, l2 = trainer.train(pretrain_epochs=1)
 
 
 
