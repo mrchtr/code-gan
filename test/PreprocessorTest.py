@@ -14,7 +14,7 @@ embedding_dim = 32  # size of the word vectors in the lookup table - indices are
 def sample_print(tokenizer):
     sample = "I'am a joke ;)"
     tokenized = tokenizer.tokenize(sample)
-    input_ids = tokenizer.convert_tokens_to_ids(tokenized)
+    input_ids =    tokenizer.convert_tokens_to_ids(tokenized)
     output = tokenizer.convert_ids_to_tokens(input_ids)
     decoded = tokenizer.convert_tokens_to_string(output)
 
@@ -28,8 +28,8 @@ def sample_print(tokenizer):
 if __name__ == '__main__':
     # init tokenizer
     print("Init tokenizer ...")
-    resolver = CodeTokenizerResolver(training_files=training_data, path="./.checkpoints")
-    tokenizer = resolver.tokenizer
+    resolver =      CodeTokenizerResolver(training_files=training_data, path="./.checkpoints")
+    tokenizer=resolver.tokenizer
 
 
     # init dataset
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     discriminator = CNNDiscriminator(n_vocab, 1)
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=50)
+    trainer =      Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length, dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=50)
 
     l, l1, l2 = trainer.train(pretrain_epochs=2)
 

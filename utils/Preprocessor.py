@@ -18,7 +18,10 @@ def preprocess(inp):
     :return: preprocessed string
     """
 
-    inp = replace_literals(inp)
+    try:
+        inp = replace_literals(inp)
+    except:
+        return ""
     inp = untokenize(inp).decode('utf-8')
     inp = replace_whitespace_not_needed(inp)
     inp = unquote_special_tokens(inp)
@@ -34,6 +37,7 @@ def replace_whitespace_not_needed(inp):
 def unquote_special_tokens(inp):
     rgx_list = [f"'({INT_TOKEN})'", f"'({COMMENT_TOKEN})'", f"'({INDENT_TOKEN})'", f"'({DEDENT_TOKEN})'"]
     return clean_text(rgx_list, inp, r"\1")
+
 
 def clean_text(rgx_list, text, replacement=''):
     """
@@ -57,28 +61,28 @@ def replace_literals(inp):
     g = tokenize(BytesIO(inp.encode('utf-8')).readline)
     result = []
     for toknum, tokval, _, _, _ in g:
-        if toknum == NUMBER: # replace NUMBER tokens with <INT_LIT>
-              result.extend([
-                        (STRING, repr(INT_TOKEN))
-                    ])
+        if toknum == NUMBER:  # replace NUMBER tokens with <INT_LIT>
+            result.extend([
+                (STRING, repr(INT_TOKEN))
+            ])
         elif toknum == STRING:
-              result.extend([
-                        (STRING, repr(STR_TOKEN))
-                    ])
+            result.extend([
+                (STRING, repr(STR_TOKEN))
+            ])
 
         elif toknum == COMMENT:
-              result.extend([
-                        (STRING, repr(COMMENT_TOKEN))
-                    ])
+            result.extend([
+                (STRING, repr(COMMENT_TOKEN))
+            ])
         elif toknum == INDENT:
 
             result.extend([
-                        (STRING, repr(INDENT_TOKEN))
-                    ])
+                (STRING, repr(INDENT_TOKEN))
+            ])
         elif toknum == DEDENT:
             result.extend([
-                        (STRING, repr(DEDENT_TOKEN))
-                    ])
+                (STRING, repr(DEDENT_TOKEN))
+            ])
         else:
             result.append((toknum, tokval))
 
