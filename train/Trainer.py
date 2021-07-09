@@ -8,7 +8,7 @@ from models.Generator import Generator
 import numpy as np
 
 from utils.FileUtils import create_dir_if_not_exists
-from utils.metrics.Bleu import Bleu
+from utils.Bleu import Bleu
 
 
 class Trainer:
