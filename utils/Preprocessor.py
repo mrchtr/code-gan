@@ -1,67 +1,39 @@
 import re
+from tokenize import tokenize, untokenize, NUMBER, STRING, NAME, OP, INDENT, DEDENT, COMMENT
+from io import BytesIO
+
+COMMENT_TOKEN = "<COMMENT>"
+INT_TOKEN = "<INT_LIST>"
+STR_TOKEN = "<STR_LIT>"
+INDENT_TOKEN = "<INDENT>"
+DEDENT_TOKEN = "<DEDENT>"
+BOF_TOKEN = "<BOF>"
+EOF_TOKEN = "<EOF>"
 
 
 def preprocess(inp):
     """
-    Combines different preprocessing methods and return the preprocced string.
+    Combines different preprocessing methods and return the preproccded string.
     :param inp: input string.
     :return: preprocessed string
     """
-    #inp = remove_comments(inp)
-    #inp = replace_tabs(inp)
-    #inp = replace_line_breaks(inp)
-    inp = replace_string_literals(inp)
-    inp = replace_integer_literals(inp)
+
+    inp = replace_literals(inp)
+    inp = untokenize(inp).decode('utf-8')
+    inp = replace_whitespace_not_needed(inp)
+    inp = unquote_special_tokens(inp)
+    inp = f"{BOF_TOKEN} {inp} {EOF_TOKEN}"
     return inp
 
 
-def replace_integer_literals(inp):
-    """
-    Replace string literals in given input
-    :param inp:
-    :return:
-    """
-    rgx_list = ['[0-9]+']
-    return clean_text(rgx_list, inp, "<INT>")
+def replace_whitespace_not_needed(inp):
+    rgx_list = ["\s(=)", "\s(\()", "\s(\))", "\s(\.)", "\s(,)"]
+    return clean_text(rgx_list, inp, r"\1")
 
-def replace_string_literals(inp):
-    """
-    Replace string literals in given input
-    :param inp:
-    :return:
-    """
-    rgx_list = ['("(\.|[^"]) * ")']
-    return clean_text(rgx_list, inp, "<STRING>")
 
-def remove_comments(inp):
-    """
-    Remove comments on the given input
-    :param inp: input string.
-    :return: input string without comments
-    """
-    rgx_list = ["#.*\n", "\"""(.|[\r\n])*\""""]
-    return clean_text(rgx_list, inp)
-
-def replace_tabs(inp):
-    """
-    Tabs will be replaced by a special token.
-    :param inp:
-    :return:
-    """
-
-    rgx_list = ["^\s\s\s\s", "    "]
-    return clean_text(rgx_list, inp, "<TAB>")
-
-def replace_line_breaks(inp):
-    """
-    Tabs will be replaced by a special token.
-    :param inp:
-    :return:
-    """
-
-    rgx_list = ["\n"]
-    return clean_text(rgx_list, inp, "<LB>")
-
+def unquote_special_tokens(inp):
+    rgx_list = [f"'({INT_TOKEN})'", f"'({COMMENT_TOKEN})'", f"'({INDENT_TOKEN})'", f"'({DEDENT_TOKEN})'"]
+    return clean_text(rgx_list, inp, r"\1")
 
 def clean_text(rgx_list, text, replacement=''):
     """
@@ -75,3 +47,39 @@ def clean_text(rgx_list, text, replacement=''):
         new_text = re.sub(rgx_match, str(replacement), str(new_text))
     return new_text
 
+
+def replace_literals(inp):
+    """
+    Replacing pyhton literals with special tokens.
+    :param inp:
+    :return:
+    """
+    g = tokenize(BytesIO(inp.encode('utf-8')).readline)
+    result = []
+    for toknum, tokval, _, _, _ in g:
+        if toknum == NUMBER: # replace NUMBER tokens with <INT_LIT>
+              result.extend([
+                        (STRING, repr(INT_TOKEN))
+                    ])
+        elif toknum == STRING:
+              result.extend([
+                        (STRING, repr(STR_TOKEN))
+                    ])
+
+        elif toknum == COMMENT:
+              result.extend([
+                        (STRING, repr(COMMENT_TOKEN))
+                    ])
+        elif toknum == INDENT:
+
+            result.extend([
+                        (STRING, repr(INDENT_TOKEN))
+                    ])
+        elif toknum == DEDENT:
+            result.extend([
+                        (STRING, repr(DEDENT_TOKEN))
+                    ])
+        else:
+            result.append((toknum, tokval))
+
+    return result
