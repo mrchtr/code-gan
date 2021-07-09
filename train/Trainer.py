@@ -90,7 +90,7 @@ class Trainer:
         sample_dir = "sample_dir/generated_sample.txt"
         # ---- generate data
         x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
-        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to(self.device)
+        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
         sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
 
         with open(sample_dir, 'w') as outfile:
