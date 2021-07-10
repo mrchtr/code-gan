@@ -15,7 +15,7 @@ class Trainer:
     """
     Holding both models for the adversarial training and the main training loop.
     """
-    def __init__(self, generator, discriminator, sequence_length, dataset, batch_size=16, lr=1e-4, max_epochs=10,
+    def __init__(self, generator, discriminator, sequence_length, dataset, batch_size=16, lr_pretrain=1e-2, lr_adv=1e-4, max_epochs=10,
                  nadv_steps=2000, g_steps=1, d_steps=5, tokenizer=None, test_file=None):
         """
         :param generator: Generator model
@@ -29,7 +29,8 @@ class Trainer:
         self.discriminator: Discriminator = discriminator
         self.sequence_length = sequence_length
         self.batch_size = batch_size
-        self.lr = lr
+        self.lr_adv = lr_adv
+        self.lr_pretrain = lr_pretrain
         self.max_epochs = max_epochs
         self.nadv_steps = nadv_steps
         self.g_steps = g_steps
@@ -57,13 +58,14 @@ class Trainer:
 
     def _adversarial_training(self):
         print("Start adversarial training ... ")
-        generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
-        discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr)
+        generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_adv)
+        discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr_adv)
         losses_per_epoch_generator = []
         losses_per_epoch_discriminator = []
 
         g_losses = []
         d_losses = []
+        metrics_summary= []
         for i in range(self.nadv_steps):
             # x = x.to(self.device) todo: later decide which context to use
             x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
@@ -78,12 +80,14 @@ class Trainer:
 
             if i % 10 == 0:
                 metrics = self.evaluate_generator()
+                metrics_summary.append(metrics)
                 print(f"Epoch: {i}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
                 print(f"Bleu score: {metrics[0]:.3f} / {metrics[1]:.3f} / {metrics[2]:.3f} / {metrics[3]:.3f}")
+
             losses_per_epoch_generator.append(np.mean(g_losses))
             losses_per_epoch_discriminator.append(np.mean(d_losses))
 
-        return losses_per_epoch_generator, losses_per_epoch_discriminator
+        return losses_per_epoch_generator, losses_per_epoch_discriminator, metrics_summary
 
     def evaluate_generator(self):
         create_dir_if_not_exists("sample_dir")
@@ -142,7 +146,7 @@ class Trainer:
     def _pretrain_generator(self, epochs):
         print("Start pretraining of generator ...")
         criterion = nn.NLLLoss()  # softmax already applied inside the model
-        optimizer = optim.Adam(self.generator.parameters(), lr=self.lr)
+        optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_pretrain)
         losses = []
         loss_per_epoch = []
         for epoch in range(epochs):

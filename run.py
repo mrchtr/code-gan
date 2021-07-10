@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     # trainer
     trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length,
-                      dataset=dataset, batch_size=128, max_epochs=2, lr=0.01, nadv_steps=1000, tokenizer=tokenizer,
+                      dataset=dataset, batch_size=128, max_epochs=2, lr_adv=0.01, nadv_steps=1000, tokenizer=tokenizer,
                       test_file=training_data)
 
     l, l1, l2 = trainer.train(pretrain_epochs=0)
