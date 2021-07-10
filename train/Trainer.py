@@ -52,9 +52,9 @@ class Trainer:
         if pretraining_generator:
             pretraining_losses = self._pretrain_generator(pretrain_epochs)
 
-        adversarial_losses_gen, adversarial_losses_dis = self._adversarial_training()
+        adversarial_losses_gen, adversarial_losses_dis, metrics_summary = self._adversarial_training()
 
-        return pretraining_losses, adversarial_losses_gen, adversarial_losses_dis
+        return pretraining_losses, adversarial_losses_gen, adversarial_losses_dis, metrics_summary
 
     def _adversarial_training(self):
         print("Start adversarial training ... ")
