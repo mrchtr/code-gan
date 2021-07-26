@@ -170,7 +170,7 @@ class RelationalMemory(nn.Module):
         q, k, v = torch.split(qkv_transpose, [self.key_size, self.key_size, self.value_size], -1)
 
         # scale q with d_k, the dimensionality of the key vectors
-        q *= (self.key_size ** -0.5)
+        q = q * (self.key_size ** -0.5)
 
         # make it [B, H, N, N]
         dot_product = torch.matmul(q, k.permute(0, 1, 3, 2))
@@ -343,21 +343,3 @@ class RelationalMemory(nn.Module):
             return logits, memory
         else:
             return logit.unsqueeze(1), memory
-
-# ########## DEBUG: unit test code ##########
-# input_size = 32
-# seq_length = 20
-# batch_size = 32
-# num_tokens = 5000
-# model = RelationalMemory(mem_slots=1, head_size=512, input_size=input_size, num_heads=2)
-# model_memory = model.initial_state(batch_size=batch_size)
-#
-# # random input
-# random_input = torch.randn((32, seq_length, input_size))
-# # random targets
-# random_targets = torch.randn((32, seq_length, input_size))
-#
-# # take a one step forward
-# logit, next_memory = model(random_input, model_memory)
-# print(next_memory.shape)
-# print(logit.shape)

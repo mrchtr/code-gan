@@ -3,7 +3,7 @@ from random import randint
 from torch import nn
 import torch.nn.functional as f
 import torch
-from models.RelationalMemory import RelationalMemory
+from models.generator.RelationalMemory import RelationalMemory
 
 
 class Generator(nn.Module):
@@ -40,15 +40,15 @@ class GeneratorRelGAN(Generator):
     """
     Text generator based on a Relational Memory like proposed by Nie et al. 2019
     """
-    def __init__(self, n_vocab, embedding_dim, mem_slots, head_size, num_heads, drop_prob=0.2):
-
+    def __init__(self, n_vocab, embedding_dim, mem_slots=1, head_size=256, num_heads=2, drop_prob=0.2):
+        super(GeneratorRelGAN, self).__init__()
         self.embeddings = nn.Embedding(n_vocab, embedding_dim)
         self.hidden_dim = mem_slots * num_heads * head_size
         self.rm = RelationalMemory(mem_slots=mem_slots, head_size=head_size, input_size=embedding_dim,
                                      num_heads=num_heads, return_all_outputs=True)
         self.rm2out = nn.Linear(self.hidden_dim, n_vocab)
 
-    def init_hidden(self, batch_size):
+    def init_state(self, batch_size):
         memory = self.rm.initial_state(batch_size)
         memory = self.rm.repackage_hidden(memory)  # detach memory at first
         return memory
@@ -63,12 +63,12 @@ class GeneratorRelGAN(Generator):
             - hidden: next hidden
             - next_token: next sentence token
         """
-        emb = self.embeddings(x).unsqueeze(1)
+        emb = self.embeddings(x).squeeze(1)
         out, hidden = self.rm(emb, hidden)
         gumbel_t = self.add_gumbel(self.rm2out(out.squeeze(1)), self.device)
         next_token = torch.argmax(gumbel_t, dim=1).detach()
 
-        pred = f.softmax(gumbel_t * self.temperature, dim=-1)
+        pred = f.log_softmax(gumbel_t * self.temperature, dim=-1)
 
         return pred, hidden, next_token
 

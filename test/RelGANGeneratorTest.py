@@ -1,3 +1,4 @@
+import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import numpy as np
@@ -5,7 +6,8 @@ import numpy as np
 from tqdm import tqdm
 
 from data.Dataset import CodeDataset
-from models.generator.Generator import GeneratorLSTM
+from models.Generator import GeneratorLSTM, GeneratorRelGAN
+from models.RelationalMemory import RelationalMemory
 from utils.Tokenizer import CodeTokenizerResolver
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -20,13 +22,14 @@ if __name__ == '__main__':
     print("Init dataset ... ")
     dataset = CodeDataset(root_dir="../demo_code", tokenizer=resolver.tokenizer, block_size=seq_len)
     tokenizer = resolver.tokenizer
-    generator = GeneratorLSTM(n_vocab=dataset.vocab_size(), embedding_dim=16, hidden_dim=128)
+    generator = GeneratorRelGAN(n_vocab=dataset.vocab_size(), embedding_dim=1)
 
     x, y = dataset.__getitem__(42)
     print(f"X: {x}")
     print(f"Y: {y} --> same as x shifted one to the right")
 
     hidden = generator.init_state(batch_size=1)
+
 
     print(f"""
         LSTM Input Definition:

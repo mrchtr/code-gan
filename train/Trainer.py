@@ -78,9 +78,10 @@ class Trainer:
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
+            metrics = self.evaluate_generator()
+            metrics_summary.append(metrics)
+
             if i % 10 == 0:
-                metrics = self.evaluate_generator()
-                metrics_summary.append(metrics)
                 print(f"Epoch: {i}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
                 print(f"Bleu score: {metrics[0]:.3f} / {metrics[1]:.3f} / {metrics[2]:.3f} / {metrics[3]:.3f}")
 

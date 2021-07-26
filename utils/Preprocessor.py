@@ -1,5 +1,5 @@
 import re
-from tokenize import tokenize, untokenize, NUMBER, STRING, NAME, OP, INDENT, DEDENT, COMMENT
+from tokenize import tokenize, untokenize, NUMBER, STRING, INDENT, DEDENT, COMMENT
 from io import BytesIO
 
 COMMENT_TOKEN = "<COMMENT>"
@@ -26,6 +26,8 @@ def preprocess(inp):
     inp = replace_whitespace_not_needed(inp)
     inp = unquote_special_tokens(inp)
     inp = f"{BOF_TOKEN} {inp} {EOF_TOKEN}"
+    inp = remove_not_needed_tokens(inp)
+    inp = remove_empty_lines(inp)
     return inp
 
 
@@ -35,9 +37,17 @@ def replace_whitespace_not_needed(inp):
 
 
 def unquote_special_tokens(inp):
-    rgx_list = [f"'({INT_TOKEN})'", f"'({COMMENT_TOKEN})'", f"'({INDENT_TOKEN})'", f"'({DEDENT_TOKEN})'"]
+    rgx_list = [f"'({INT_TOKEN})'", f"'({INDENT_TOKEN})'", f"'({DEDENT_TOKEN})'"]
     return clean_text(rgx_list, inp, r"\1")
 
+def remove_not_needed_tokens(inp):
+    rgx_list = [f"'({COMMENT_TOKEN})'"]
+    return clean_text(rgx_list, inp, "")
+
+def remove_empty_lines(inp):
+    inp = inp.split("\n")
+    inp = [x for x in inp if x.strip() != ""]
+    return "\n".join(inp)
 
 def clean_text(rgx_list, text, replacement=''):
     """
@@ -74,6 +84,7 @@ def replace_literals(inp):
             result.extend([
                 (STRING, repr(COMMENT_TOKEN))
             ])
+
         elif toknum == INDENT:
 
             result.extend([
