@@ -3,10 +3,10 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from data.Dataset import CodeDataset
-from models.Discriminator import Discriminator
-from models.Generator import Generator
 import numpy as np
 
+from models.discriminator.Discriminator import Discriminator
+from models.generator.Generator import Generator
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Bleu import Bleu
 
@@ -68,7 +68,11 @@ class Trainer:
         metrics_summary= []
         for i in range(self.nadv_steps):
             # x = x.to(self.device) todo: later decide which context to use
-            x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
+            if True:  # case of noise
+                x = torch.LongTensor([0] * self.batch_size * self.sequence_length).reshape(self.batch_size, self.sequence_length).to(self.device)
+            else:  # case of random example
+                x = None
+
             loss_g = self.adv_train_generator(x, generator_optimizer)
             loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
 
@@ -94,7 +98,7 @@ class Trainer:
         create_dir_if_not_exists("sample_dir")
         sample_dir = "sample_dir/generated_sample.txt"
         # ---- generate data
-        x = torch.LongTensor([0] * self.batch_size).reshape(self.batch_size, 1).to(self.device)
+        x = torch.LongTensor([0] * self.batch_size * self.sequence_length).reshape(self.batch_size, self.sequence_length).to(self.device)
         sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
         sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
 
@@ -157,11 +161,23 @@ class Trainer:
             for batch, (x, y) in enumerate(self.dataloader):
                 x = x.to(self.device)
                 y = y.to(self.device)
-                hidden = hidden[0].to(self.device), hidden[1].to(self.device)
+
+                if hidden.shape == torch.zeros(self.batch_size, self.batch_size).shape:
+                    # in this case the generator is a transformer architecture
+                    hidden = hidden.to(self.device)
+                else:
+                    hidden = hidden[0].to(self.device), hidden[1].to(self.device)
+
+                # if y contains a whole sequence just using the last token
+                if y.shape[1] > 1:
+                    y = y[:, -1]
 
                 pred, hidden, next_token = self.generator(x, hidden)
                 loss = criterion(pred, y.view(-1))
-                hidden = hidden[0].detach(), hidden[1].detach()
+
+                if hidden.shape != torch.zeros(self.batch_size, self.batch_size).shape:
+                    hidden = hidden[0].detach(), hidden[1].detach()
+
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()

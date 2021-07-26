@@ -7,6 +7,7 @@ import torch.nn.functional as f
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
+from transformers import GPTNeoModel
 
 from models.generator.Generator import Generator
 
@@ -30,8 +31,11 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 class TransformerGenerator(Generator):
-
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5):
+    """
+    Model followed concept of 'Attention is all you need'.
+    Default parameters are same that are used in gpt-2
+    """
+    def __init__(self, ntoken, ninp=768, nhead=12, nhid=200, nlayers=12, dropout=0.5):
         super(TransformerGenerator, self).__init__()
         self.pos_encoder = PositionalEncoding(ninp, dropout)  # positional encoder
         encoder_layers = TransformerEncoderLayer(ninp, nhead, nhid, dropout)  # encoder stack
@@ -42,7 +46,12 @@ class TransformerGenerator(Generator):
 
         self.init_weights()
 
-    def generate_square_subsequent_mask(self, sz):
+    def init_state(self, sz):
+        """
+        Generates square subsequent mask. For consitency method is called init state.
+        :param sz: batch_size
+        :return:
+        """
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
@@ -62,7 +71,7 @@ class TransformerGenerator(Generator):
         next_token = torch.argmax(gumbel_t, dim=2).detach()[:, -1]  # batch_size * 1
         prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab
         prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch
-        return output, prediction, next_token
+        return prediction, src_mask, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):
         """
@@ -76,17 +85,37 @@ class TransformerGenerator(Generator):
         num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
         samples = torch.zeros(num_batch * batch_size, sequence_length).long()
         samples.to(self.device)
-        src_mask = self.generate_square_subsequent_mask(batch_size)
+        src_mask = self.init_state(batch_size)
         for b in range(num_batch):
             inp = context
             for i in range(sequence_length):
-                output, pred, next_token = self.forward(inp, src_mask)
+                pred, src_mask, next_token = self.forward(inp, src_mask)
                 samples[b * batch_size:(b + 1) * batch_size, i] = next_token
                 inp = torch.from_numpy(np.append(inp, next_token.unsqueeze(1), axis=1)[:,1:])
         samples = samples[:num_samples]  # num_samples * seq_len
 
         return samples
 
+
+class PretrainedGPTGenerator(Generator):
+    """
+    Generator based on the pretrained GPT-Neo of Huggingface
+    """
+
+    def __init__(self, ntoken, pretrained_model="EleutherAI/gpt-neo-125M"):
+        super(PretrainedGPTGenerator, self).__init__()
+        self.ntoken = ntoken
+        self.transformer = GPTNeoModel.from_pretrained(pretrained_model)
+        self.decoder = nn.Linear(self.transformer.config.hidden_size, ntoken)
+
+
+    def init_state(self, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+
+    def forward(self, src, src_mask):
+        output = self.transformer(input_ids=src, attention_mask=src_mask)
 
 
 

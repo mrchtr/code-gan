@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 from data.Dataset import CodeDataset, TextDataset
-from models.generator.TransformerGenerator import TransformerGenerator
+from models.generator.TransformerGenerator import PretrainedGPTGenerator
 from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -21,7 +21,7 @@ nhid = 200  # the dimension of the feedforward network model in nn.TransformerEn
 nlayers = 12  # the number of nn.TransformerEncoderLayer in nn.TransformerEncoder
 nhead = 12  # the number of heads in the multiheadattention models
 dropout = 0.2  # the dropout value
-model = TransformerGenerator(ntokens, emsize, nhead, nhid, nlayers, dropout)
+model = PretrainedGPTGenerator(ntokens)
 
 if __name__ == '__main__':
     print("Starting testing Transformer Generator")
