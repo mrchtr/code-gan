@@ -12,14 +12,14 @@ class SentencepieceResolver:
     Wrapper for a basic byte pair tokenizer based on sentencepiece.
     """
 
-    def __init__(self, path=".", special_tokens=[], vocab_size=5000, name="m"):
+    def __init__(self, config, path=".", special_tokens=[], vocab_size=5000, name="m"):
         """
         :param path: path to the training files
         :param special_tokens: special tokens
         """
-        self.path = path
-        self.special_tokens = special_tokens
-        self.vocab_size = vocab_size
+        self.path = config.training_data
+        self.special_tokens = config.special_tokens
+        self.vocab_size = config.vocab_size
         self.name = name
 
         self.tokenizer = None
@@ -54,7 +54,7 @@ class CodeTokenizerResolver:
     CodeTokenizer is a load a byte-lever-tokenizer that is trained on source code.
     If the checkpoint files not exist, the training for the source code tokenizer is started.
     """
-    def __init__(self, path=".", vocab_size=52_000, min_frequency=2, pretrained="code-tokenizer", training_files=None) \
+    def __init__(self, path=".", config=None, min_frequency=2, pretrained="code-tokenizer", training_files=None) \
             -> GPT2Tokenizer:
         """
         :param path: path to pretrained tokenizer checkpoints files
@@ -63,10 +63,11 @@ class CodeTokenizerResolver:
         :param pretrained: name for pretrained files
         :param training_files: files for the training process
         """
-        self.vocab_size = vocab_size
+        self.config = config
+        self.vocab_size = config.vocab_size
         self.path = path
         self.min_frequency = min_frequency
-        self.tokenizer = self.train_if_not_available(path, pretrained, training_files, vocab_size, min_frequency)
+        self.tokenizer = self.train_if_not_available(path, pretrained, config.data_dir, self.vocab_size, min_frequency)
 
     def train_if_not_available(self, path, tokenizer_name, training_files, vocab_size, min_frequency):
         tokenizer_wt = path + "/" + tokenizer_name + "-vocab.json"
@@ -78,9 +79,7 @@ class CodeTokenizerResolver:
 
             tokenizer = ByteLevelBPETokenizer()
             tokenizer.train(files=training_files, vocab_size=vocab_size, min_frequency=min_frequency,
-                            special_tokens=[
-                                "<BOF>", "<EOF>"
-                            ])
+                            special_tokens=self.config.special_tokens)
 
             tokenizer.save_model(path, tokenizer_name)
 
@@ -98,3 +97,13 @@ class CodeTokenizerResolver:
             path + "/" + name + "-vocab.json",
             path + "/" + name + "-merges.txt"
         )
+
+    def encode(self, inp):
+        if self.tokenizer is None:
+            return
+        return self.tokenizer.encode(inp)
+
+    def decode(self, inp):
+        if self.tokenizer is None:
+            return
+        return self.tokenizer.decode(inp)

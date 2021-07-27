@@ -24,8 +24,7 @@ class CNNDiscriminator(Discriminator):
     """
 
     def __init__(self,
-                 vocab_size,
-                 embedding_dim,
+                 config,
                  filter_sizes=[2, 3, 4, 5],
                  num_filters=[300, 300, 300, 300],
                  num_classes=2,
@@ -41,18 +40,18 @@ class CNNDiscriminator(Discriminator):
         :param dropout: Dropout rate. Defaul: 0.5
         """
         super(Discriminator, self).__init__()
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.vocab_size = vocab_size
-        self.embedding_dim = embedding_dim
+        self.device = config.device
+        self.vocab_size = config.vocab_size
+        self.embedding_dim = config.discriminator_embedding_dim
         self.feature_dim = sum(num_filters)
-        self.embedding = nn.Embedding(num_embeddings=vocab_size,
-                                      embedding_dim=embedding_dim,
+        self.embedding = nn.Embedding(num_embeddings=self.vocab_size,
+                                      embedding_dim=self.embedding_dim,
                                       padding_idx=0,
                                       max_norm=5.0)
 
         # Convolutional Network
         self.conv2d_list = nn.ModuleList([
-            nn.Conv2d(1, n, (f, embedding_dim), stride=(1, embedding_dim)) for (n, f) in
+            nn.Conv2d(1, n, (f, self.embedding_dim), stride=(1, self.embedding_dim)) for (n, f) in
             zip(num_filters, filter_sizes)
         ])
 

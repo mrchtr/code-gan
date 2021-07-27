@@ -1,8 +1,8 @@
 import torch
+import wandb
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
-from data.Dataset import CodeDataset
 import numpy as np
 
 from models.discriminator.Discriminator import Discriminator
@@ -10,13 +10,13 @@ from models.generator.Generator import Generator
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Bleu import Bleu
 
+text_table = wandb.Table(columns=["epoch", "sample"])
 
 class Trainer:
     """
     Holding both models for the adversarial training and the main training loop.
     """
-    def __init__(self, generator, discriminator, sequence_length, dataset, batch_size=16, lr_pretrain=1e-2, lr_adv=1e-4, max_epochs=10,
-                 nadv_steps=2000, g_steps=1, d_steps=5, tokenizer=None, test_file=None):
+    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None):
         """
         :param generator: Generator model
         :param discriminator: Discriminator model
@@ -25,86 +25,73 @@ class Trainer:
         :param lr: learning rate
         :param max_epochs: maximum of epochs to train
         """
+        self.config = config
         self.generator: Generator = generator
         self.discriminator: Discriminator = discriminator
-        self.sequence_length = sequence_length
-        self.batch_size = batch_size
-        self.lr_adv = lr_adv
-        self.lr_pretrain = lr_pretrain
-        self.max_epochs = max_epochs
-        self.nadv_steps = nadv_steps
-        self.g_steps = g_steps
-        self.d_steps = d_steps
-        self.dataset: CodeDataset = dataset
-        self.dataloader = DataLoader(dataset, batch_size, drop_last=True)
+        self.sequence_length = config.sequence_length
+        self.batch_size = config.batch_size
+        self.lr_adv = config.lr_adv
+        self.lr_pretrain = config.lr_pretrain
+        self.nadv_steps = config.nadv_steps
+        self.g_steps = config.g_steps
+        self.d_steps = config.d_steps
+        self.dataset = dataset
+        self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True)
         self.tokenizer = tokenizer
-        self.test_file = test_file
+        self.test_file = config.validation_data
 
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.device = config.device
         self.generator = self.generator.to(self.device)
         self.discriminator = self.discriminator.to(self.device)
 
+        self.logger = logger
 
-    def train(self, pretraining_generator=True, pretrain_epochs=1):
+    def train(self):
         """
         Main training loop. Including pretraining and adverserial training
         """
-        if pretraining_generator:
-            pretraining_losses = self._pretrain_generator(pretrain_epochs)
 
-        adversarial_losses_gen, adversarial_losses_dis, metrics_summary = self._adversarial_training()
+        self._pretrain_generator()
+        self._adversarial_training()
 
-        return pretraining_losses, adversarial_losses_gen, adversarial_losses_dis, metrics_summary
+        # logging samples to wandb
+        self.logger.log({"generated samples": text_table})
 
     def _adversarial_training(self):
         print("Start adversarial training ... ")
         generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_adv)
         discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr_adv)
-        losses_per_epoch_generator = []
-        losses_per_epoch_discriminator = []
 
-        g_losses = []
-        d_losses = []
-        metrics_summary= []
         for i in range(self.nadv_steps):
-            # x = x.to(self.device) todo: later decide which context to use
-            if True:  # case of noise
-                x = torch.LongTensor([0] * self.batch_size * self.sequence_length).reshape(self.batch_size, self.sequence_length).to(self.device)
-            else:  # case of random example
-                x = None
+            x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
 
             loss_g = self.adv_train_generator(x, generator_optimizer)
             loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
 
-            g_losses.append(loss_g)
-            d_losses.append(loss_d)
-
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
+            self.evaluate_generator(i)
+            self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
+                             "temperature": self.generator.temperature})
 
-            metrics = self.evaluate_generator()
-            metrics_summary.append(metrics)
+            if self.nadv_steps % 20 == 0:
+                torch.save(self.generator.state_dict(), 'generator.pth')
 
-            if i % 10 == 0:
-                print(f"Epoch: {i}, l_g: {np.mean(g_losses)}, l_d: {np.mean(d_losses)}, temperature: {self.generator.temperature}")
-                print(f"Bleu score: {metrics[0]:.3f} / {metrics[1]:.3f} / {metrics[2]:.3f} / {metrics[3]:.3f}")
 
-            losses_per_epoch_generator.append(np.mean(g_losses))
-            losses_per_epoch_discriminator.append(np.mean(d_losses))
-
-        return losses_per_epoch_generator, losses_per_epoch_discriminator, metrics_summary
-
-    def evaluate_generator(self):
+    def evaluate_generator(self, epoch):
         create_dir_if_not_exists("sample_dir")
         sample_dir = "sample_dir/generated_sample.txt"
         # ---- generate data
-        x = torch.LongTensor([0] * self.batch_size * self.sequence_length).reshape(self.batch_size, self.sequence_length).to(self.device)
+        x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
         sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
         sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
 
         with open(sample_dir, 'w') as outfile:
             outfile.write(sample_str)
         outfile.close()
+        # ---- logging to wandb
+        text_table.add_data(epoch, sample_str)
+
 
         # ---- calculate bleu score
         return self.get_metrics(sample_dir, self.test_file)
@@ -148,13 +135,13 @@ class Trainer:
 
         return np.mean(losses)
 
-    def _pretrain_generator(self, epochs):
+    def _pretrain_generator(self):
         print("Start pretraining of generator ...")
         criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_pretrain)
         losses = []
         loss_per_epoch = []
-        for epoch in range(epochs):
+        for epoch in range(self.config.pretraining_epochs):
             hidden = self.generator.init_state(self.batch_size)
             self.generator.train()
 
@@ -162,8 +149,7 @@ class Trainer:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                if hidden.shape == torch.zeros(self.batch_size, self.batch_size).shape:
-                    # in this case the generator is a transformer architecture
+                if self.config.generator == "Transformer":
                     hidden = hidden.to(self.device)
                 else:
                     hidden = hidden[0].to(self.device), hidden[1].to(self.device)
@@ -175,20 +161,17 @@ class Trainer:
                 pred, hidden, next_token = self.generator(x, hidden)
                 loss = criterion(pred, y.view(-1))
 
-                if hidden.shape != torch.zeros(self.batch_size, self.batch_size).shape:
+                if self.config.generator == "LSTM":
                     hidden = hidden[0].detach(), hidden[1].detach()
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.item())
+                self.logger.log({f"{epoch}/loss": loss.item()})
+            self.logger.log({f"pretraining/loss": np.mean(losses)})
 
-            if epoch % 10 == 0:
-                print(f"Epoch {epoch} - loss: {np.mean(losses)}")
-
-            loss_per_epoch.append(np.mean(losses))
-
-        return loss_per_epoch
+        torch.save(self.generator.state_dict(), 'generator.pth')
 
 
     def get_losses(self, d_out_real, d_out_fake):
@@ -217,13 +200,11 @@ class Trainer:
         :param max_epoch: max epochs of training
         :return: temperature
         """
-        N = 5000  # todo implement real method
+        N = self.nadv_steps  # todo implement real method
         return 1 + i / (N - 1) * (temperature - 1)
 
 
     def get_metrics(self, gen_file, test_file):
-        metrics = []
         for i in range(2, 6):
             bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name=f"blue-{i}")
-            metrics.append(bleu.get_bleu())
-        return metrics
+            self.logger.log({f"bleu-{i}": bleu.get_bleu()})

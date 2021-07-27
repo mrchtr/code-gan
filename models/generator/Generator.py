@@ -10,11 +10,11 @@ class Generator(nn.Module):
     """
     Boilerplate class for different generator models.
     """
-    def __init__(self):
+    def __init__(self, config):
         super(Generator, self).__init__()
-        self.temperature = 1.0
+        self.temperature = config.temperature
 
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.device = config.device
 
     def sample(self, context, sequence_length):
         """
@@ -77,7 +77,7 @@ class GeneratorLSTM(Generator):
     Basic implementation of a LSTM that generates code suggestion based on given context
     """
 
-    def __init__(self, n_vocab, embedding_dim, hidden_dim, num_layers=1, drop_prob=0.2):
+    def __init__(self, config):
         """
         :param n_vocab: Size of vocabulary
         :param embedding_dim: Dimension of the embeddings in the lookup table
@@ -86,20 +86,20 @@ class GeneratorLSTM(Generator):
         :param sequence_length: sequence length of output
         :param drop_prob: dropout probability
         """
-        super(GeneratorLSTM, self).__init__()
-
-        self.n_vocab = n_vocab
-        self.embedding_dim = embedding_dim
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
+        super(GeneratorLSTM, self).__init__(config)
+        self.config = config
+        self.n_vocab = config.vocab_size
+        self.embedding_dim = config.embedding_dim
+        self.hidden_dim = config.nhid
+        self.num_layers = config.nlayers
 
         self.embedding = nn.Embedding(
-            num_embeddings=n_vocab,
-            embedding_dim=embedding_dim,
+            num_embeddings=config.vocab_size,
+            embedding_dim=config.embedding_dim,
         )
 
         self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim, batch_first=True)
-        self.fc = nn.Linear(self.hidden_dim, n_vocab)
+        self.fc = nn.Linear(self.hidden_dim, self.n_vocab)
 
     def forward(self, x, prev_state):
         embed = self.embedding(x)  # input: batch_size * seq_len / output: batch_size * seq_len * embed_dim

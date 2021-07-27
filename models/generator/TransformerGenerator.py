@@ -35,14 +35,15 @@ class TransformerGenerator(Generator):
     Model followed concept of 'Attention is all you need'.
     Default parameters are same that are used in gpt-2
     """
-    def __init__(self, ntoken, ninp=768, nhead=12, nhid=200, nlayers=12, dropout=0.5):
-        super(TransformerGenerator, self).__init__()
-        self.pos_encoder = PositionalEncoding(ninp, dropout)  # positional encoder
-        encoder_layers = TransformerEncoderLayer(ninp, nhead, nhid, dropout)  # encoder stack
-        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
-        self.encoder = nn.Embedding(ntoken, ninp)
-        self.ninp = ninp
-        self.decoder = nn.Linear(ninp, ntoken)
+    def __init__(self, config):
+        super(TransformerGenerator, self).__init__(config)
+        self.config = config
+        self.pos_encoder = PositionalEncoding(config.ninp, config.dropout)  # positional encoder
+        encoder_layers = TransformerEncoderLayer(config.ninp, config.nhead, config.nhid, config.dropout)  # encoder stack
+        self.transformer_encoder = TransformerEncoder(encoder_layers, config.nlayers)
+        self.encoder = nn.Embedding(config.vocab_size, config.ninp)
+        self.ninp = config.ninp
+        self.decoder = nn.Linear(config.ninp, config.vocab_size)
 
         self.init_weights()
 
@@ -54,6 +55,7 @@ class TransformerGenerator(Generator):
         """
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        maks = mask.to(self.config.device)
         return mask
 
     def init_weights(self):

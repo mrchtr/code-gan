@@ -3,3 +3,4 @@ tqdm
 transformers
 sentencepiece
 nltk
+wandb

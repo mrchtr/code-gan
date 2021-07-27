@@ -1,54 +1,62 @@
+from config import init_config
 from data.Dataset import TextDataset
 from models.discriminator.Discriminator import CNNDiscriminator
+from models.generator.Generator import GeneratorLSTM
 
 from models.generator.TransformerGenerator import TransformerGenerator
 from train.Trainer import Trainer
 from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
+import os
+import wandb
 
-training_data = "./demo_code/out_jokes.py"
-block_size = 12  # size of training data blocks - relgan should be 1 - transformer larger then 8
-sequence_length = 40  # length of generated sequences
-embedding_dim = 8  # size of the word vectors in the lookup table - indices are converted to the embedding_dim
+project_name = "code-gan-debug"
 
+#os.environ["WANDB_MODE"] = "offline"
 
+def init_wandb_logger(config):
+    return wandb.init(project=project_name, config=config)
 
 if __name__ == '__main__':
+    config = init_config()
+    logger = init_wandb_logger(config)
 
-    # init tokenizer
-    print("Init tokenizer ...")
+    print("Start Code-GAN training with the following configuration: ")
+    print(f"Generator {config.generator}")
+    print(f"Discriminator {config.discriminator}")
 
-    special_tokens = [
-        '<BOF>',
-        '<EOF>',
-        '<COMMENT>',
-        '<STR_LIT>',
-        '<INT_LIT>'
-    ]
+    # initialize tokenizer
+    tokenizer = CodeTokenizerResolver(config=config)
 
-    tokenizer = SentencepieceResolver(path=training_data, vocab_size=1000, special_tokens=special_tokens)
-
-    # init dataset
-    print("Init dataset ... ")
-
-    with open(training_data) as f:
+    # initialize dataset
+    with open(config.training_data) as f:
         content = "".join(f.readlines())
+    dataset = TextDataset(inp=tokenizer.encode(content), block_size=config.block_size)
 
-    dataset = TextDataset(inp=tokenizer.encode(content), block_size=block_size)
+    assert tokenizer.vocab_size == config.vocab_size
 
-    # init generator
-    n_vocab = tokenizer.vocab_size
+    # initialize generator model
+    if config.generator == "Transformer":
+        generator = TransformerGenerator(config)
+    elif config.generator == "LSTM":
+        generator = GeneratorLSTM(config)
+    else:
+        raise Exception(f"Can't create unknown generator {config.generator}")
 
-    #generator = GeneratorLSTM(n_vocab=n_vocab, embedding_dim=embedding_dim, hidden_dim=128, num_layers=1)
-    generator = TransformerGenerator(n_vocab)
-    print(f"Generator device: {generator.device}")
-    discriminator = CNNDiscriminator(n_vocab, 1)
+    # initialize discriminator model
+    if config.discriminator == "CNN":
+        discriminator = CNNDiscriminator(config)
+    else:
+        raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
     # trainer
-    trainer = Trainer(generator=generator, discriminator=discriminator, sequence_length=sequence_length,
-                      dataset=dataset, batch_size=2, max_epochs=2, lr_adv=0.01, nadv_steps=1000, tokenizer=tokenizer,
-                      test_file=training_data)
+    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger)
+    trainer.train()
 
-    l, l1, l2 = trainer.train(pretrain_epochs=0)
+    artifact = wandb.Artifact('model', type='model')
+    artifact.add_file('generator.pth')
+    logger.log_artifact(artifact)
+
+    logger.close()
 
 
 
