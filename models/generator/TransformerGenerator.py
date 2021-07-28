@@ -55,7 +55,7 @@ class TransformerGenerator(Generator):
         """
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        maks = mask.to(self.config.device)
+        mask = mask.to(self.config.device)
         return mask
 
     def init_weights(self):
