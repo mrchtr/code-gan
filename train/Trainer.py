@@ -84,6 +84,7 @@ class Trainer:
 
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
+
             self.evaluate_generator(i)
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
@@ -107,7 +108,8 @@ class Trainer:
             text_table.add_data(epoch, sample_str)
 
             # ---- calculate bleu score
-            return self.get_metrics(sample_dir, self.test_file)
+            # todo reactive later on again
+            # return self.get_metrics(sample_dir, self.test_file)
 
         except:
             print(f"Error while validation of sequence: {str(sample.numpy()[0])}")
