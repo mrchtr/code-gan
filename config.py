@@ -9,7 +9,7 @@ def init_config():
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # generator model
-    config.generator = "Transformer"  # LSTM or Transformer
+    config.generator = "GPTCode"  # LSTM or Transformer
 
     # --- used for Transformer XL
     config.ninp = 768  # default: 768
@@ -25,7 +25,7 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.training_data = "./demo_code/out_jokes.py"
+    config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
     config.block_size = 16  # in case of LSTM / Memory Unit should be 1
@@ -45,7 +45,7 @@ def init_config():
 
     config.sequence_length = 20  # size of generated examples
     config.batch_size = 32
-    config.pretraining_epochs = 150
+    config.pretraining_epochs = 10
     config.lr_pretrain = 5.0
     config.lr_adv = 1e-4
     config.nadv_steps = 5000

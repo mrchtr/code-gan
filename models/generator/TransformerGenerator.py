@@ -7,7 +7,7 @@ import torch.nn.functional as f
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
-from transformers import GPTNeoModel
+from transformers import GPTNeoModel, GPT2Model
 
 from models.generator.Generator import Generator
 
@@ -104,11 +104,12 @@ class PretrainedGPTGenerator(Generator):
     Generator based on the pretrained GPT-Neo of Huggingface
     """
 
-    def __init__(self, ntoken, pretrained_model="EleutherAI/gpt-neo-125M"):
-        super(PretrainedGPTGenerator, self).__init__()
-        self.ntoken = ntoken
-        self.transformer = GPTNeoModel.from_pretrained(pretrained_model)
-        self.decoder = nn.Linear(self.transformer.config.hidden_size, ntoken)
+    def __init__(self, config, pretrained_model="microsoft/CodeGPT-small-py"):
+        super(PretrainedGPTGenerator, self).__init__(config)
+        self.config = config
+        self.ntoken = config.vocab_size
+        self.transformer = GPT2Model.from_pretrained(pretrained_model)
+        self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
 
 
     def init_state(self, sz):
@@ -116,8 +117,38 @@ class PretrainedGPTGenerator(Generator):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def forward(self, src, src_mask):
-        output = self.transformer(input_ids=src, attention_mask=src_mask)
+    def forward(self, src, prev_hidden=None):
+        output = self.transformer(src)
+        output = self.decoder(output.last_hidden_state)
+        gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
+        next_token = torch.argmax(gumbel_t, dim=2).detach()[:, -1]  # batch_size * 1
+        prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab
+        prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch
+        return prediction, None, next_token
+
+    def sample(self, context, sequence_length, batch_size, num_samples=1):
+        """
+                Generating sample of context
+                TODO: for now just the prediction of next token - apply different encoding strategies later
+                :param context: previous token
+                :param sequence_length: length of sample
+                :return:
+                """
+        global all_preds  # batch_size * seq_len * vocab_size
+        num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
+        samples = torch.zeros(num_batch * batch_size, sequence_length).long()
+        samples.to(self.device)
+        src_mask = self.init_state(batch_size)
+        for b in range(num_batch):
+            inp = context
+            for i in range(sequence_length):
+                pred, _, next_token = self.forward(inp)
+                samples[b * batch_size:(b + 1) * batch_size, i] = next_token
+                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:]).to(self.device)
+        samples = samples[:num_samples]  # num_samples * seq_len
+
+        return samples
+
 
 
 

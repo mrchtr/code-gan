@@ -165,7 +165,7 @@ class Trainer:
 
                 if self.config.generator == "Transformer":
                     hidden = hidden.to(self.device)
-                else:
+                elif self.config.generator == "LSTM":
                     hidden = hidden[0].to(self.device), hidden[1].to(self.device)
 
                 # if y contains a whole sequence just using the last token

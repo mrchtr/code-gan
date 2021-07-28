@@ -5,6 +5,7 @@ import numpy as np
 
 from tqdm import tqdm
 
+from config import init_config
 from data.Dataset import CodeDataset, TextDataset
 from models.generator.TransformerGenerator import PretrainedGPTGenerator
 from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
@@ -21,20 +22,28 @@ nhid = 200  # the dimension of the feedforward network model in nn.TransformerEn
 nlayers = 12  # the number of nn.TransformerEncoderLayer in nn.TransformerEncoder
 nhead = 12  # the number of heads in the multiheadattention models
 dropout = 0.2  # the dropout value
-model = PretrainedGPTGenerator(ntokens)
 
 if __name__ == '__main__':
+    config = init_config()
+
     print("Starting testing Transformer Generator")
 
-    tokenizer = SentencepieceResolver(path=training_data, vocab_size=vocab_size)
+    tokenizer = CodeTokenizerResolver(config=config)
 
-    # init dataset
-    print("Init dataset ... ")
-
-    with open(training_data) as f:
+    # initialize dataset
+    with open(config.training_data) as f:
         content = "".join(f.readlines())
 
-    dataset = TextDataset(inp=tokenizer.encode(content), block_size=block_size)
+    # tokenize text - to reduce memory size mini batches will be proceeded
+    print(f"Start tokenization of training data ...")
+    tokenized_training_data = []
+    mini_batch = 500
+    for i in tqdm(range(0, len(content), mini_batch)):
+        tokenized_training_data += tokenizer.encode(content[i:i + mini_batch])
+
+    dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
+
+    assert tokenizer.vocab_size == config.vocab_size
 
     train_loader = DataLoader(dataset, batch_size=batch_size, drop_last=True)
 
@@ -42,8 +51,9 @@ if __name__ == '__main__':
     print(f"X: {x}")
     print(f"Y: {y} --> same as x shifted one to the right")
 
-    src_mask = model.init_state(block_size)
-    model.forward(x, src_mask)  # takes input and src_mask
+    model = PretrainedGPTGenerator(config)
+    #src_mask = model.init_state(block_size)
+    #model.forward(x, src_mask)  # takes input and src_mask
 
     criterion = nn.NLLLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=5.0)
@@ -54,7 +64,7 @@ if __name__ == '__main__':
         losses = []
         for batch, (x, y) in tqdm(enumerate(train_loader), ncols=75):
             i += 1
-            output, pred, next_token = model(x, src_mask)
+            pred, _, next_token = model(x)
             y = y[:, -1]
             loss = criterion(pred, y.view(-1))  # do it on gumbel_t instead of prediction
             loss.backward()

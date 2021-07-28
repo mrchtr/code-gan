@@ -3,7 +3,7 @@ from data.Dataset import TextDataset
 from models.discriminator.Discriminator import CNNDiscriminator
 from models.generator.Generator import GeneratorLSTM
 
-from models.generator.TransformerGenerator import TransformerGenerator
+from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
 from train.Trainer import Trainer
 from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
 import os
@@ -48,6 +48,8 @@ if __name__ == '__main__':
         generator = TransformerGenerator(config)
     elif config.generator == "LSTM":
         generator = GeneratorLSTM(config)
+    elif config.generator == "GPTCode":
+        generator = PretrainedGPTGenerator(config)
     else:
         raise Exception(f"Can't create unknown generator {config.generator}")
 
