@@ -25,7 +25,7 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.training_data = "./demo_code/out_train.txt"
+    config.training_data = "./demo_code/out_jokes.py"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
     config.block_size = 32  # in case of LSTM / Memory Unit should be 1

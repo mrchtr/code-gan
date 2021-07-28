@@ -91,10 +91,11 @@ class TransformerGenerator(Generator):
         for b in range(num_batch):
             inp = context
             for i in range(sequence_length):
+                print(f"device inp: {inp.device} device src_mask: {src_mask.device}")
                 pred, src_mask, next_token = self.forward(inp, src_mask)
+                print(f"device next_token: {inp.device} device src_mask: {src_mask.device}")
                 samples[b * batch_size:(b + 1) * batch_size, i] = next_token
-                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:])
-                inp.to(self.device)
+                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:]).to(self.device)
         samples = samples[:num_samples]  # num_samples * seq_len
 
         return samples
