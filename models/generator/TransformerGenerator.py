@@ -87,13 +87,14 @@ class TransformerGenerator(Generator):
         num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
         samples = torch.zeros(num_batch * batch_size, sequence_length).long()
         samples.to(self.device)
+        inp.to(self.device)
         src_mask = self.init_state(batch_size)
         for b in range(num_batch):
             inp = context
             for i in range(sequence_length):
                 pred, src_mask, next_token = self.forward(inp, src_mask)
                 samples[b * batch_size:(b + 1) * batch_size, i] = next_token
-                inp = torch.from_numpy(np.append(inp, next_token.unsqueeze(1), axis=1)[:,1:])
+                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:])
         samples = samples[:num_samples]  # num_samples * seq_len
 
         return samples
