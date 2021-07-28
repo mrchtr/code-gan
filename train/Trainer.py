@@ -35,6 +35,11 @@ class Trainer:
         self.nadv_steps = config.nadv_steps
         self.g_steps = config.g_steps
         self.d_steps = config.d_steps
+
+        self.pretrain_optimizer = config.pretrain_optimizer
+        self.generator_optimizer = config.generator_optimizer
+        self.discriminator_optimizer = config.discriminator_optimizer
+
         self.dataset = dataset
         self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True)
         self.tokenizer = tokenizer
@@ -57,10 +62,19 @@ class Trainer:
         # logging samples to wandb
         self.logger.log({"generated samples": text_table})
 
+    @staticmethod
+    def _get_optimizer(name, parameters, lr):
+        if name == "SGD":
+            return optim.SGD(parameters, lr=lr)
+        elif name == "Adam":
+            return optim.Adam(parameters, lr=lr)
+        else:
+            raise Exception(f"Can't create unknown optimizer {name}")
+
     def _adversarial_training(self):
         print("Start adversarial training ... ")
-        generator_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_adv)
-        discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr_adv)
+        generator_optimizer = self._get_optimizer(self.generator_optimizer, self.generator.parameters(), lr=self.lr_adv)
+        discriminator_optimizer = self._get_optimizer(self.discriminator_optimizer, self.discriminator.parameters(), lr=self.lr_adv)
 
         for i in range(self.nadv_steps):
             x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
@@ -138,7 +152,7 @@ class Trainer:
     def _pretrain_generator(self):
         print("Start pretraining of generator ...")
         criterion = nn.NLLLoss()  # softmax already applied inside the model
-        optimizer = optim.Adam(self.generator.parameters(), lr=self.lr_pretrain)
+        optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
         losses = []
         loss_per_epoch = []
         for epoch in range(self.config.pretraining_epochs):
@@ -168,7 +182,7 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.item())
-                self.logger.log({f"{epoch}/loss": loss.item()})
+                #self.logger.log({f"{epoch}/loss": loss.item()})
             self.logger.log({f"pretraining/loss": np.mean(losses)})
 
         torch.save(self.generator.state_dict(), 'generator.pth')
