@@ -12,7 +12,7 @@ import wandb
 
 project_name = "code-gan-debug"
 
-os.environ["WANDB_MODE"] = "offline"
+#os.environ["WANDB_MODE"] = "offline"
 
 def init_wandb_logger(config):
     return wandb.init(project=project_name, config=config)
