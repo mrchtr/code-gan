@@ -98,18 +98,19 @@ class Trainer:
         # ---- generate data
         x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
         sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
-        sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+        try:
+            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+            with open(sample_dir, 'w') as outfile:
+                outfile.write(sample_str)
+            outfile.close()
+            # ---- logging to wandb
+            text_table.add_data(epoch, sample_str)
 
-        with open(sample_dir, 'w') as outfile:
-            outfile.write(sample_str)
-        outfile.close()
-        # ---- logging to wandb
-        text_table.add_data(epoch, sample_str)
+            # ---- calculate bleu score
+            return self.get_metrics(sample_dir, self.test_file)
 
-
-        # ---- calculate bleu score
-        return self.get_metrics(sample_dir, self.test_file)
-
+        except:
+            print(f"Error while validation of sequence: {str(sample.numpy()[0])}")
 
     def adv_train_generator(self, x, optimizer):
         losses = []
