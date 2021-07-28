@@ -28,7 +28,7 @@ def init_config():
     config.training_data = "./demo_code/out_jokes.py"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
-    config.block_size = 32  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 16  # in case of LSTM / Memory Unit should be 1
     config.vocab_size = 5000
     config.special_tokens = [
         '<BOF>',
@@ -43,12 +43,12 @@ def init_config():
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
 
-    config.sequence_length = 40  # size of generated examples
+    config.sequence_length = 20  # size of generated examples
     config.batch_size = 32
-    config.pretraining_epochs = 0
+    config.pretraining_epochs = 150
     config.lr_pretrain = 5.0
     config.lr_adv = 1e-4
-    config.nadv_steps = 2000
+    config.nadv_steps = 5000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 100

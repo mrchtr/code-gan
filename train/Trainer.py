@@ -9,7 +9,7 @@ from models.discriminator.Discriminator import Discriminator
 from models.generator.Generator import Generator
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Bleu import Bleu
-
+from tqdm import tqdm
 text_table = wandb.Table(columns=["epoch", "sample"])
 
 class Trainer:
@@ -72,11 +72,11 @@ class Trainer:
             raise Exception(f"Can't create unknown optimizer {name}")
 
     def _adversarial_training(self):
-        print("Start adversarial training ... ")
+        print(f"Start adversarial training. Run for {self.nadv_steps} steps ...")
         generator_optimizer = self._get_optimizer(self.generator_optimizer, self.generator.parameters(), lr=self.lr_adv)
         discriminator_optimizer = self._get_optimizer(self.discriminator_optimizer, self.discriminator.parameters(), lr=self.lr_adv)
 
-        for i in range(self.nadv_steps):
+        for i in tqdm(range(self.nadv_steps)):
             x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
 
             loss_g = self.adv_train_generator(x, generator_optimizer)
@@ -156,10 +156,10 @@ class Trainer:
         losses = []
         loss_per_epoch = []
         for epoch in range(self.config.pretraining_epochs):
+            print(f"Run pretrain epoch {epoch} ...")
             hidden = self.generator.init_state(self.batch_size)
             self.generator.train()
-
-            for batch, (x, y) in enumerate(self.dataloader):
+            for batch, (x, y) in enumerate(tqdm(self.dataloader)):
                 x = x.to(self.device)
                 y = y.to(self.device)
 
