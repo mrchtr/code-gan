@@ -97,7 +97,7 @@ class Trainer:
             return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
                                                                                          self.config.block_size).to(self.device)
         else:
-            return self.dataset.get_random_real_sample(self.batch_size, self.config.block_size)
+            return self.dataset.get_random_real_sample(self.batch_size, self.config.block_size).to(self.device)
 
     def evaluate_generator(self, epoch):
         create_dir_if_not_exists("sample_dir")
@@ -194,7 +194,9 @@ class Trainer:
             optimizer.step()
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
+            print(f"pretraining loss: {loss.item()}")
 
+        print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')
 
 

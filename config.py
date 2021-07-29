@@ -39,15 +39,15 @@ def init_config():
     ]
 
     # training related parameter & hyper parameters
-    config.pretrain_optimizer = "SGD"
+    config.pretrain_optimizer = "Adam"
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
 
     config.sequence_length = 40  # size of generated examples
-    config.batch_size = 4
+    config.batch_size = 16
     # config.pretraining_epochs = 0
     config.pretraining_steps = 100
-    config.lr_pretrain = 5.0
+    config.lr_pretrain = 3e-5
     config.lr_adv = 2e-3 # 1e-4
     config.nadv_steps = 1000
     config.g_steps = 1
