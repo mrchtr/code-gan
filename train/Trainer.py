@@ -203,9 +203,15 @@ class Trainer:
             - g_loss: generator loss value
         """
         bce_loss = nn.BCEWithLogitsLoss()
+        if self.config.loss_type == "standard":  # wasserstein loss
+            d_loss_real = bce_loss(d_out_real, torch.ones_like(d_out_real)).to(self.device)
+            d_loss_fake = bce_loss(d_out_fake, torch.zeros_like(d_out_fake)).to(self.device)
+            d_loss = d_loss_real + d_loss_fake
 
-        d_loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real)).to(self.device)
-        g_loss = bce_loss(d_out_fake - d_out_real, torch.ones_like(d_out_fake)).to(self.device)
+            g_loss = bce_loss(d_out_fake, torch.ones_like(d_out_fake))
+        else: # relativistic standard GAN (rsgan)
+            d_loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real)).to(self.device)
+            g_loss = bce_loss(d_out_fake - d_out_real, torch.ones_like(d_out_fake)).to(self.device)
 
         return d_loss, g_loss
 
@@ -218,6 +224,7 @@ class Trainer:
         :return: temperature
         """
         N = self.nadv_steps  # todo implement real method
+        i = N - i
         return 1 + i / (N - 1) * (temperature - 1)
 
 
