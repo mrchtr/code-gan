@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
 
-    assert len(tokenizer) == config.vocab_size
+    #assert len(tokenizer) == config.vocab_size
 
     # initialize generator model
     if config.generator == "Transformer":
