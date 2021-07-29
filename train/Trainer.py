@@ -41,7 +41,7 @@ class Trainer:
         self.discriminator_optimizer = config.discriminator_optimizer
 
         self.dataset = dataset
-        self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True)
+        self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True, shuffle=True)
         self.tokenizer = tokenizer
         self.test_file = config.validation_data
 
