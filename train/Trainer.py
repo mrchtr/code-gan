@@ -77,8 +77,8 @@ class Trainer:
         discriminator_optimizer = self._get_optimizer(self.discriminator_optimizer, self.discriminator.parameters(), lr=self.lr_adv)
 
         for i in tqdm(range(self.nadv_steps)):
-            x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
-
+            # context should be of shape (batch_size, block_size)
+            x = self._generate_context()
             loss_g = self.adv_train_generator(x, generator_optimizer)
             loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
 
@@ -92,12 +92,18 @@ class Trainer:
             if self.nadv_steps % 20 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
+    def _generate_context(self):
+        if self.config.noise_as_context:
+            return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
+                                                                                         self.config.block_size).to(self.device)
+        else:
+            return self.dataset.get_random_real_sample(self.batch_size, self.config.block_size)
 
     def evaluate_generator(self, epoch):
         create_dir_if_not_exists("sample_dir")
         sample_dir = "sample_dir/generated_sample.txt"
         # ---- generate data
-        x = torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size, self.config.block_size).to(self.device)
+        x = self._generate_context()
         sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
         try:
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
@@ -157,36 +163,37 @@ class Trainer:
         criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
         losses = []
-        loss_per_epoch = []
-        for epoch in range(self.config.pretraining_epochs):
-            print(f"Run pretrain epoch {epoch} ...")
-            hidden = self.generator.init_state(self.batch_size)
-            self.generator.train()
-            for batch, (x, y) in enumerate(tqdm(self.dataloader)):
-                x = x.to(self.device)
-                y = y.to(self.device)
+        iterator = iter(self.dataloader)
 
-                if self.config.generator == "Transformer":
-                    hidden = hidden.to(self.device)
-                elif self.config.generator == "LSTM":
-                    hidden = hidden[0].to(self.device), hidden[1].to(self.device)
+        # initial hidden state
+        hidden = self.generator.init_state(self.batch_size)
+        self.generator.train()
 
-                # if y contains a whole sequence just using the last token
-                if y.shape[1] > 1:
-                    y = y[:, -1]
+        for i in tqdm(range(self.config.pretraining_steps)):
+            x, y = next(iterator)
+            x = x.to(self.device)
+            y = y.to(self.device)
 
-                pred, hidden, next_token = self.generator(x, hidden)
-                loss = criterion(pred, y.view(-1))
+            if self.config.generator == "Transformer":
+                hidden = hidden.to(self.device)
+            elif self.config.generator == "LSTM":
+                hidden = hidden[0].to(self.device), hidden[1].to(self.device)
 
-                if self.config.generator == "LSTM":
-                    hidden = hidden[0].detach(), hidden[1].detach()
+            # if y contains a whole sequence just using the last token
+            if y.shape[1] > 1:
+                y = y[:, -1]
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                losses.append(loss.item())
-                #self.logger.log({f"{epoch}/loss": loss.item()})
-            self.logger.log({f"pretraining/loss": np.mean(losses)})
+            pred, hidden, next_token = self.generator(x, hidden)
+            loss = criterion(pred, y.view(-1))
+
+            if self.config.generator == "LSTM":
+                hidden = hidden[0].detach(), hidden[1].detach()
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            losses.append(loss.item())
+            self.logger.log({f"pretraining/loss": loss.item()})
 
         torch.save(self.generator.state_dict(), 'generator.pth')
 

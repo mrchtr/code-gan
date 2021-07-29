@@ -44,14 +44,16 @@ def init_config():
     config.discriminator_optimizer = "Adam"
 
     config.sequence_length = 40  # size of generated examples
-    config.batch_size = 64
-    config.pretraining_epochs = 0
+    config.batch_size = 4
+    # config.pretraining_epochs = 0
+    config.pretraining_steps = 100
     config.lr_pretrain = 5.0
-    config.lr_adv = 0.002 # 1e-4
+    config.lr_adv = 2e-3 # 1e-4
     config.nadv_steps = 1000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 100
     config.loss_type = "standard"
+    config.noise_as_context = False
 
     return config

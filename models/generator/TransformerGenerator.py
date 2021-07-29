@@ -109,6 +109,7 @@ class PretrainedGPTGenerator(Generator):
         self.config = config
         self.ntoken = config.vocab_size
         self.transformer = GPT2Model.from_pretrained(pretrained_model)
+        self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
 
 
