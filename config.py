@@ -25,7 +25,7 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.training_data = "./demo_code/out_jokes.py"
+    config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
     config.block_size = 32  # in case of LSTM / Memory Unit should be 1
@@ -44,12 +44,12 @@ def init_config():
     config.discriminator_optimizer = "Adam"
 
     config.sequence_length = 40  # size of generated examples
-    config.batch_size = 16
+    config.batch_size = 64
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 100
-    config.lr_pretrain = 3e-5
+    config.pretraining_steps = 1000
+    config.lr_pretrain = 3e-3
     config.lr_adv = 2e-3 # 1e-4
-    config.nadv_steps = 1000
+    config.nadv_steps = 5000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 100

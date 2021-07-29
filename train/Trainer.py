@@ -194,7 +194,6 @@ class Trainer:
             optimizer.step()
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
-            print(f"pretraining loss: {loss.item()}")
 
         print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')
