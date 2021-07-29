@@ -28,12 +28,12 @@ if __name__ == '__main__':
     print(f"Discriminator {config.discriminator}")
 
     # initialize tokenizer
-    if config.generator == "GPTCode":
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py")
-        tokenizer.add_special_tokens({'additional_special_tokens': config.special_tokens})
-        config.vocab_size = len(tokenizer)
-    else:
-        tokenizer = CodeTokenizerResolver(config=config)
+    #if config.generator == "GPTCode":
+    #    tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py")
+    #    tokenizer.add_special_tokens({'additional_special_tokens': config.special_tokens})
+    #    config.vocab_size = len(tokenizer)
+    #else:
+    tokenizer = CodeTokenizerResolver(config=config)
 
     # initialize dataset
     with open(config.training_data) as f:

@@ -48,7 +48,8 @@ def init_config():
     # config.pretraining_epochs = 0
     config.pretraining_steps = 1000
     config.lr_pretrain = 3e-3
-    config.lr_adv = 2e-3 # 1e-4
+    config.lr_adv_g = 2e-3 # 1e-4
+    config.lr_adv_d = 2e-3  # 1e-4
     config.nadv_steps = 5000
     config.g_steps = 1
     config.d_steps = 1

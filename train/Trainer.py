@@ -30,7 +30,8 @@ class Trainer:
         self.discriminator: Discriminator = discriminator
         self.sequence_length = config.sequence_length
         self.batch_size = config.batch_size
-        self.lr_adv = config.lr_adv
+        self.lr_adv_g = config.lr_adv_g
+        self.lr_adv_d = config.lr_adv_d
         self.lr_pretrain = config.lr_pretrain
         self.nadv_steps = config.nadv_steps
         self.g_steps = config.g_steps
@@ -73,8 +74,8 @@ class Trainer:
 
     def _adversarial_training(self):
         print(f"Start adversarial training. Run for {self.nadv_steps} steps ...")
-        generator_optimizer = self._get_optimizer(self.generator_optimizer, self.generator.parameters(), lr=self.lr_adv)
-        discriminator_optimizer = self._get_optimizer(self.discriminator_optimizer, self.discriminator.parameters(), lr=self.lr_adv)
+        generator_optimizer = self._get_optimizer(self.generator_optimizer, self.generator.parameters(), lr=self.lr_adv_g)
+        discriminator_optimizer = self._get_optimizer(self.discriminator_optimizer, self.discriminator.parameters(), lr=self.lr_adv_d)
 
         for i in tqdm(range(self.nadv_steps)):
             # context should be of shape (batch_size, block_size)
