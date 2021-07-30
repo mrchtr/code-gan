@@ -9,7 +9,7 @@ def init_config():
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # generator model
-    config.generator = "GPTCode"  # LSTM or Transformer
+    config.generator = "Transformer"  # LSTM or Transformer
 
     # --- used for Transformer XL
     config.ninp = 768  # default: 768
@@ -28,8 +28,8 @@ def init_config():
     config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
-    config.block_size = 32  # in case of LSTM / Memory Unit should be 1
-    config.vocab_size = 5000
+    config.block_size = 256  # in case of LSTM / Memory Unit should be 1
+    config.vocab_size = 32000
     config.special_tokens = [
         '<BOF>',
         '<EOF>',
@@ -43,18 +43,18 @@ def init_config():
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
 
-    config.sequence_length = 40  # size of generated examples
-    config.batch_size = 64
+    config.sequence_length = 20  # size of generated examples
+    config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 1000
+    config.pretraining_steps = 25e+4
     config.lr_pretrain = 3e-3
-    config.lr_adv_g = 2e-3 # 1e-4
-    config.lr_adv_d = 2e-3  # 1e-4
-    config.nadv_steps = 5000
+    config.lr_adv_g = 1e-4  # 1e-4
+    config.lr_adv_d = 1e-4  # 1e-4
+    config.nadv_steps = 1e+6
     config.g_steps = 1
     config.d_steps = 1
-    config.temperature = 100
-    config.loss_type = "standard"
+    config.temperature = 1
+    config.loss_type = "rsgan"
     config.noise_as_context = False
 
     return config
