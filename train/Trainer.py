@@ -108,14 +108,14 @@ class Trainer:
         #    bleu = bleu_score(sample, self.reference_corpus, max_n=i)
         #    self.logger.log({f"bleu-{i}": bleu})
 
-        if epoch % 100 == 0:
-            # ---- generate data
-            x = self._generate_context()
-            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
 
-            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            # ---- logging to wandb
-            text_table.add_data(epoch, sample_str)
+        # ---- generate data
+        x = self._generate_context()
+        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
+
+        sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+        # ---- logging to wandb
+        text_table.add_data(epoch, sample_str)
 
     def adv_train_generator(self, x, optimizer):
         losses = []
@@ -191,9 +191,7 @@ class Trainer:
             optimizer.step()
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
-
-            if i % 200 == 0:
-                self.evaluate_generator(i)
+            self.evaluate_generator(i)
 
         print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')
