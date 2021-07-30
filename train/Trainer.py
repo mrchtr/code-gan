@@ -110,12 +110,15 @@ class Trainer:
 
 
         # ---- generate data
-        x = self._generate_context()
-        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
+        try:
+            x = self._generate_context()
+            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
 
-        sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-        # ---- logging to wandb
-        text_table.add_data(epoch, sample_str)
+            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+            # ---- logging to wandb
+            text_table.add_data(epoch, sample_str)
+        except:
+            print(f"Error while evaluation")
 
     def adv_train_generator(self, x, optimizer):
         losses = []
