@@ -4,3 +4,4 @@ transformers
 sentencepiece
 nltk
 wandb
+torchtext

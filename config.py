@@ -25,10 +25,10 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.training_data = "./demo_code/out_train.txt"
-    config.validation_data = "./demo_code/out_test.txt"
+    config.training_data = "./demo_code/out_jokes.py"
+    config.validation_data = "./demo_code/out_jokes.py"
     config.data_dir = "./demo_code"
-    config.block_size = 256  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 16  # in case of LSTM / Memory Unit should be 1
     config.vocab_size = 32000
     config.special_tokens = [
         '<BOF>',
@@ -46,11 +46,11 @@ def init_config():
     config.sequence_length = 20  # size of generated examples
     config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 25e+4
+    config.pretraining_steps = 1
     config.lr_pretrain = 3e-3
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 1e+6
+    config.nadv_steps = 10
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 1

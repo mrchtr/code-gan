@@ -122,7 +122,8 @@ class PretrainedGPTGenerator(Generator):
     def forward(self, src, prev_hidden=None):
         output = self.transformer(src)
         output = self.decoder(output.last_hidden_state)
-        gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
+        #gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
+        gumbel_t = f.gumbel_softmax(output.squeeze(1))
         next_token = torch.argmax(gumbel_t, dim=2).detach()[:, -1]  # batch_size * 1
         prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab
         prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch

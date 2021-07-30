@@ -4,6 +4,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 import numpy as np
+from torchtext.data.metrics import bleu_score
 
 from models.discriminator.Discriminator import Discriminator
 from models.generator.Generator import Generator
@@ -16,7 +17,7 @@ class Trainer:
     """
     Holding both models for the adversarial training and the main training loop.
     """
-    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None):
+    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None, reference_corpus=None):
         """
         :param generator: Generator model
         :param discriminator: Discriminator model
@@ -51,6 +52,7 @@ class Trainer:
         self.discriminator = self.discriminator.to(self.device)
 
         self.logger = logger
+        self.reference_corpus = reference_corpus
 
     def train(self):
         """
@@ -101,25 +103,19 @@ class Trainer:
             return self.dataset.get_random_real_sample(self.batch_size, self.config.block_size).to(self.device)
 
     def evaluate_generator(self, epoch):
-        create_dir_if_not_exists("sample_dir")
-        sample_dir = "sample_dir/generated_sample.txt"
-        # ---- generate data
-        x = self._generate_context()
-        sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')
-        try:
+        # calculate perplexit
+        #for i in range(2, 6):
+        #    bleu = bleu_score(sample, self.reference_corpus, max_n=i)
+        #    self.logger.log({f"bleu-{i}": bleu})
+
+        if epoch % 100 == 0:
+            # ---- generate data
+            x = self._generate_context()
+            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
+
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            with open(sample_dir, 'w') as outfile:
-                outfile.write(sample_str)
-            outfile.close()
             # ---- logging to wandb
             text_table.add_data(epoch, sample_str)
-
-            # ---- calculate bleu score
-            # todo reactive later on again
-            # return self.get_metrics(sample_dir, self.test_file)
-
-        except:
-            print(f"Error while validation of sequence: {str(sample.numpy()[0])}")
 
     def adv_train_generator(self, x, optimizer):
         losses = []
