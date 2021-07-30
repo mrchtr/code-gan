@@ -192,6 +192,9 @@ class Trainer:
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
 
+            if i % 200 == 0:
+                self.evaluate_generator(i)
+
         print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')
 
