@@ -9,7 +9,7 @@ def init_config():
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # generator model
-    config.generator = "Transformer"  # LSTM or Transformer
+    config.generator = "GPTCode"  # LSTM,  Transformer or GPTCode
 
     # --- used for Transformer XL
     config.ninp = 768  # default: 768
@@ -25,10 +25,10 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.training_data = "./demo_code/out_jokes.py"
-    config.validation_data = "./demo_code/out_jokes.py"
+    config.training_data = "./demo_code/out_train.txt"
+    config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
-    config.block_size = 16  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
     config.vocab_size = 32000
     config.special_tokens = [
         '<BOF>',
@@ -39,18 +39,18 @@ def init_config():
     ]
 
     # training related parameter & hyper parameters
-    config.pretrain_optimizer = "Adam"
-    config.generator_optimizer = "Adam"
-    config.discriminator_optimizer = "Adam"
+    config.pretrain_optimizer = "AdamW"
+    config.generator_optimizer = "AdamW"
+    config.discriminator_optimizer = "AdamW"
 
-    config.sequence_length = 20  # size of generated examples
+    config.sequence_length = 40  # size of generated examples
     config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 1
-    config.lr_pretrain = 3e-3
+    config.pretraining_steps = 25000
+    config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 10
+    config.nadv_steps = 5000000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 1

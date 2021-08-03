@@ -7,7 +7,7 @@ import torch.nn.functional as f
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
-from transformers import GPTNeoModel, GPT2Model
+from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead
 
 from models.generator.Generator import Generator
 
@@ -72,7 +72,7 @@ class TransformerGenerator(Generator):
         #gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
         gumbel_t = f.gumbel_softmax(output.squeeze(1))
         next_token = torch.argmax(gumbel_t, dim=2).detach()[:, -1]  # batch_size * 1
-        prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab
+        prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab # todo this is duplicated with the torch funciton
         prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch
         return prediction, src_mask, next_token
 
@@ -121,12 +121,11 @@ class PretrainedGPTGenerator(Generator):
 
     def forward(self, src, prev_hidden=None):
         output = self.transformer(src)
-        output = self.decoder(output.last_hidden_state)
-        #gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
-        gumbel_t = f.gumbel_softmax(output.squeeze(1))
-        next_token = torch.argmax(gumbel_t, dim=2).detach()[:, -1]  # batch_size * 1
-        prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab
-        prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch
+        output = self.decoder(output.last_hidden_state)  # getting just the transformer logits without lm_head
+        #gumbel_t = f.gumbel_softmax(output, tau=self.temperature)
+        prediction = f.gumbel_softmax(output, tau=self.temperature)
+        next_token = torch.argmax(prediction, dim=2).detach()[:, -1]  # batch_size * 1
+
         return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):

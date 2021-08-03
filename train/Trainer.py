@@ -62,8 +62,6 @@ class Trainer:
         self._pretrain_generator()
         self._adversarial_training()
 
-        # logging samples to wandb
-        self.logger.log({"generated samples": text_table})
 
     @staticmethod
     def _get_optimizer(name, parameters, lr):
@@ -71,6 +69,8 @@ class Trainer:
             return optim.SGD(parameters, lr=lr)
         elif name == "Adam":
             return optim.Adam(parameters, lr=lr)
+        elif name == "AdamW":
+            return optim.AdamW(parameters, lr=lr)
         else:
             raise Exception(f"Can't create unknown optimizer {name}")
 
@@ -117,6 +117,7 @@ class Trainer:
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
             # ---- logging to wandb
             text_table.add_data(epoch, sample_str)
+            self.logger.log({"generated-samples": text_table})
         except:
             print(f"Error while evaluation")
 
@@ -160,7 +161,11 @@ class Trainer:
 
     def _pretrain_generator(self):
         print("Start pretraining of generator ...")
-        criterion = nn.NLLLoss()  # softmax already applied inside the model
+
+        if self.config.generator == "GPTCode":
+            criterion = nn.CrossEntropyLoss()
+        else:
+            criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
         losses = []
         iterator = iter(self.dataloader)
@@ -180,11 +185,17 @@ class Trainer:
                 hidden = hidden[0].to(self.device), hidden[1].to(self.device)
 
             # if y contains a whole sequence just using the last token
-            if y.shape[1] > 1:
-                y = y[:, -1]
+            #if y.shape[1] > 1:
+            #    y = y[:, -1]
 
             pred, hidden, next_token = self.generator(x, hidden)
-            loss = criterion(pred, y.view(-1))
+
+            if self.config.generator == "GPTCode":
+                shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
+                shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
+                loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            else:
+                loss = criterion(pred, y.view(-1))
 
             if self.config.generator == "LSTM":
                 hidden = hidden[0].detach(), hidden[1].detach()

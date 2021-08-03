@@ -30,7 +30,6 @@ if __name__ == '__main__':
     # initialize tokenizer
     if config.generator == "GPTCode":
         tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py")
-        tokenizer.add_tokens(config.special_tokens)
         config.vocab_size = len(tokenizer)
     else:
         tokenizer = CodeTokenizerResolver(config=config)
@@ -47,6 +46,17 @@ if __name__ == '__main__':
         tokenized_training_data += tokenizer.encode(content[i:i+mini_batch])
 
     dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
+
+    # creating reference dataset for evaluation
+    print(f"Start tokenization of evaluation data ...")
+    with open(config.validation_data) as f:
+        content = "".join(f.readlines())
+
+    tokenized_reference_data = []
+    mini_batch = 500
+    for i in tqdm(range(0, len(content), mini_batch)):
+        tokenized_reference_data += tokenizer.encode(content[i:i + mini_batch])
+
 
     #assert len(tokenizer) == config.vocab_size
 
@@ -67,14 +77,14 @@ if __name__ == '__main__':
         raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
     # trainer
-    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger)
+    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger, reference_corpus=tokenized_reference_data)
     trainer.train()
 
     artifact = wandb.Artifact('model', type='model')
     artifact.add_file('generator.pth')
     logger.log_artifact(artifact)
 
-    logger.close()
+    logger.finish()
 
 
 
