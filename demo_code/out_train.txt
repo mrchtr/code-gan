@@ -1,0 +1,100 @@
+<BOF>
+'<STR_LIT>'
+from django.conf.urls import patterns
+from django.conf.urls import url
+import rest_api
+urlpatterns=patterns(
+'<STR_LIT>',
+url('<STR_LIT>',rest_api.Clients.as_view(),name='<STR_LIT>'),
+url('<STR_LIT>',rest_api.ActionList.as_view(),name='<STR_LIT>'),
+url('<STR_LIT>',
+rest_api.Actions.as_view(),name='<STR_LIT>'),)
+ <EOF><BOF>
+from __future__ import unicode_literals
+from django.db import migrations
+class Migration(migrations.Migration):
+<INDENT>dependencies=[('<STR_LIT>','<STR_LIT>'),
+]
+operations=[
+migrations.RemoveField(
+model_name='<STR_LIT>',
+name='<STR_LIT>',),
+]
+<DEDENT> <EOF><BOF>
+from __future__ import unicode_literals
+from django.db import models,migrations
+import pages.utils
+from django.conf import settings
+class Migration(migrations.Migration):
+<INDENT>dependencies=[
+migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+]
+operations=[
+migrations.CreateModel(
+name='<STR_LIT>',
+fields=[('<STR_LIT>',models.AutoField(verbose_name='<STR_LIT>',serialize=False,auto_created=True,primary_key=True)),('<STR_LIT>',models.CharField(max_length=<INT_LIST>,verbose_name='<STR_LIT>')),('<STR_LIT>',models.TextField(verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.CharField(max_length=<INT_LIST>,verbose_name='<STR_LIT>',db_index=True)),('<STR_LIT>',models.DateTimeField(default=pages.utils.get_now,verbose_name='<STR_LIT>',editable=False)),
+],
+options={
+'<STR_LIT>':'<STR_LIT>',
+'<STR_LIT>':'<STR_LIT>',
+'<STR_LIT>':'<STR_LIT>',
+},),
+migrations.CreateModel(
+name='<STR_LIT>',
+fields=[('<STR_LIT>',models.AutoField(verbose_name='<STR_LIT>',serialize=False,auto_created=True,primary_key=True)),('<STR_LIT>',models.DateTimeField(default=pages.utils.get_now,verbose_name='<STR_LIT>',editable=False)),('<STR_LIT>',models.DateTimeField(help_text='<STR_LIT>',null=True,verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.DateTimeField(help_text='<STR_LIT>',null=True,verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.DateTimeField(verbose_name='<STR_LIT>')),('<STR_LIT>',models.IntegerField(default=<INT_LIST>,verbose_name='<STR_LIT>',choices=[(<INT_LIST>,'<STR_LIT>'),(<INT_LIST>,'<STR_LIT>'),(<INT_LIST>,'<STR_LIT>')])),('<STR_LIT>',models.CharField(max_length=<INT_LIST>,null=True,verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.CharField(max_length=<INT_LIST>,null=True,verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.DateTimeField(help_text='<STR_LIT>',null=True,verbose_name='<STR_LIT>',blank=True)),('<STR_LIT>',models.CharField(max_length=<INT_LIST>,null=True,blank=True)),('<STR_LIT>',models.PositiveIntegerField(editable=False,db_index=True)),('<STR_LIT>',models.PositiveIntegerField(editable=False,db_index=True)),('<STR_LIT>',models.PositiveIntegerField(editable=False,db_index=True)),('<STR_LIT>',models.PositiveIntegerField(editable=False,db_index=True)),('<STR_LIT>',models.ForeignKey(verbose_name='<STR_LIT>',to=settings.AUTH_USER_MODEL)),('<STR_LIT>',models.ForeignKey(related_name='<STR_LIT>',verbose_name='<STR_LIT>',blank=True,to='<STR_LIT>',null=True)),('<STR_LIT>',models.ForeignKey(related_name='<STR_LIT>',blank=True,to='<STR_LIT>',null=True)),
+],
+options={
+'<STR_LIT>':['<STR_LIT>','<STR_LIT>'],
+'<STR_LIT>':'<STR_LIT>',
+'<STR_LIT>':'<STR_LIT>',
+'<STR_LIT>':'<STR_LIT>',
+'<STR_LIT>':[('<STR_LIT>','<STR_LIT>'),('<STR_LIT>','<STR_LIT>'),('<STR_LIT>','<STR_LIT>'),('<STR_LIT>','<STR_LIT>'),('<STR_LIT>','<STR_LIT>')],
+},),
+migrations.CreateModel(
+name='<STR_LIT>',
+fields=[('<STR_LIT>',models.AutoField(verbose_name='<STR_LIT>',serialize=False,auto_created=True,primary_key=True)),('<STR_LIT>',models.CharField(unique=True,max_length=<INT_LIST>)),('<STR_LIT>',models.ForeignKey(verbose_name='<STR_LIT>',blank=True,to='<STR_LIT>',null=True)),
+],
+options={
+'<STR_LIT>':'<STR_LIT>',
+},),
+migrations.AddField(
+model_name='<STR_LIT>',
+name='<STR_LIT>',
+field=models.ForeignKey(verbose_name='<STR_LIT>',to='<STR_LIT>'),),
+]
+<DEDENT> <EOF><BOF> import os
+import subprocess
+import plistlib
+import datetime
+from copy import deepcopy
+class ReadingListReader :
+<INDENT>def __init__(self,input=None):
+<INDENT>if None==input :
+<INDENT>input=os.path.expanduser('<STR_LIT>')
+<DEDENT>pipe=subprocess.Popen(('<STR_LIT>','<STR_LIT>','<STR_LIT>','<STR_LIT>','<STR_LIT>',input),shell=False,stdout=subprocess.PIPE).stdout
+xml=plistlib.readPlist(pipe)
+pipe.close()
+section=filter(lambda record :'<STR_LIT>'==record.get('<STR_LIT>'),xml ['<STR_LIT>'])
+reading_list=section [<INT_LIST>].get('<STR_LIT>')
+if None==reading_list :
+<INDENT>reading_list=[]
+<DEDENT>self._articles=[]
+for item in reading_list :
+<INDENT>added=item ['<STR_LIT>'].get('<STR_LIT>')
+if None==added :
+<INDENT>added=datetime.datetime.min
+<DEDENT>viewed=item ['<STR_LIT>'].get('<STR_LIT>')
+if None==viewed :
+<INDENT>viewed=datetime.datetime.min
+<DEDENT>fetched=item ['<STR_LIT>'].get('<STR_LIT>')
+if None==fetched :
+<INDENT>fetched=item ['<STR_LIT>'].get('<STR_LIT>')
+if None==fetched :
+<INDENT>fetched=datetime.datetime.min
+<DEDENT> <DEDENT>self._articles.append({
+'<STR_LIT>':item ['<STR_LIT>']['<STR_LIT>'],
+'<STR_LIT>':item ['<STR_LIT>'],
+'<STR_LIT>':item ['<STR_LIT>'].get('<STR_LIT>','<STR_LIT>'),
+'<STR_LIT>':fetched,
+'<STR_LIT>':added,
+'<STR_LIT>':viewed,
