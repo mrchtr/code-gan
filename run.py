@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # initialize tokenizer
     if config.generator == "GPTCode":
         tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py-adaptedGPT2")
-        tokenizer.pad_token_id = tokenizer.eos_token_id
+        #tokenizer.pad_token_id = tokenizer.eos_token_id
         config.vocab_size = len(tokenizer)
     else:
         tokenizer = CodeTokenizerResolver(config=config)
