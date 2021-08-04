@@ -109,11 +109,11 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     Generator based on the pretrained GPT-Neo of Huggingface
     """
 
-    def __init__(self, config, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2"):
+    def __init__(self, config, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2", eos_token_id=50256):
         super(PretrainedGPTGenerator, self).__init__(config)
         self._config = config
         self.ntoken = config.vocab_size
-        self.transformer = AutoModelWithLMHead.from_pretrained(pretrained_model)
+        self.transformer = AutoModelWithLMHead.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
         self.config = self.transformer.config
         self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
