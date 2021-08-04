@@ -68,8 +68,8 @@ class CNNDiscriminator(Discriminator):
         """
 
         # add noise to input.
-        inp = inp + (0.1 ** 0.5) * torch.randn(inp.shape).to(self.device)
-        inp = inp.int().to(self.device)
+        #inp = inp + (0.1 ** 0.5) * torch.randn(inp.shape).to(self.device)
+        #inp = inp.int().to(self.device)
 
         # Get embeddings from `inp`. Output shape: batch_size * 1 * max_seq_len * embed_dim
         x_embed = self.embedding(inp).unsqueeze(1).float()
