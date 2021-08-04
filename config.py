@@ -46,14 +46,14 @@ def init_config():
     config.sequence_length = 40  # size of generated examples
     config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 1
+    config.pretraining_steps = 0
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 2
+    config.nadv_steps = 100000
     config.g_steps = 1
     config.d_steps = 1
-    config.temperature = 1
+    config.temperature = 50
     config.loss_type = "rsgan"
     config.noise_as_context = False
 
