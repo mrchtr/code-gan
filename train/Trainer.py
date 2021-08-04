@@ -115,9 +115,10 @@ class Trainer:
             sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+            print(f"Sample: {sample_str}")
             # ---- logging to wandb
             text_table.add_data(epoch, sample_str)
-            self.logger.log({"generated-samples": text_table})
+            self.logger.log({"samples": text_table})
         except:
             print(f"Error while evaluation")
 

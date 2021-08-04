@@ -3,8 +3,12 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelWithLMHead
 import torch
 from torch import nn
+
+from config import init_config
 from data.Dataset import TextDataset
 import torch.nn.functional as F
+
+from models.generator.TransformerGenerator import PretrainedGPTGenerator
 
 
 def decode(tokens):
@@ -15,7 +19,10 @@ training_data = "../demo_code/out_train.txt"
 block_size=16
 
 tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py-adaptedGPT2")
-model = AutoModelWithLMHead.from_pretrained("microsoft/CodeGPT-small-py-adaptedGPT2")
+# model = AutoModelWithLMHead.from_pretrained("microsoft/CodeGPT-small-py-adaptedGPT2")
+config = init_config()
+config.vocab_size = len(tokenizer)
+model = PretrainedGPTGenerator(config)
 
 with open(training_data) as f:
     content = "".join(f.readlines())
@@ -26,7 +33,9 @@ x, y = dataset.__getitem__(0)
 print(f"X: {x}")
 print(f"Y: {y} --> same as x shifted one to the right")
 print(f"Back to text again: {tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(y))}")
-
+output = model.sample(x.reshape(1,block_size), 20, 1, 1)
+output = model.generate(x.reshape(1, block_size), max_length=30, num_beams=1)
+print(f"{tokenizer.decode(output[0])}")
 
 criterion = nn.NLLLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
@@ -37,11 +46,11 @@ model.train()
 loss_fct = CrossEntropyLoss()
 
 for batch, (x, y) in enumerate(train_loader):
-    output = model(x)
+    output = model(x, return_dict=True)
 
 
     # test for getting next possible token
-    logits = model(x).logits # last layer logits of batch : 0
+    logits = model(x, return_dict=True).logits # last layer logits of batch : 0
     logits = F.gumbel_softmax(logits)
     next_token = [torch.argmax(logits[0], dim=-1)[-1]]
     decoded = decode(next_token)

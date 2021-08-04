@@ -28,7 +28,7 @@ def init_config():
     config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
-    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 16  # in case of LSTM / Memory Unit should be 1
     config.vocab_size = 32000
     config.special_tokens = [
         '<BOF>',
@@ -46,11 +46,11 @@ def init_config():
     config.sequence_length = 40  # size of generated examples
     config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 25000
+    config.pretraining_steps = 1
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 5000000
+    config.nadv_steps = 2
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 1

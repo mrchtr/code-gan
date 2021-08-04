@@ -2,12 +2,16 @@
 #Original Paper and repository here : https://github.com/openai/gpt-2
 
 import math
+from abc import ABC
+
 import torch
 import torch.nn.functional as f
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
 from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead
+from transformers.generation_utils import GenerationMixin
+from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from models.generator.Generator import Generator
 
@@ -100,16 +104,17 @@ class TransformerGenerator(Generator):
         return samples
 
 
-class PretrainedGPTGenerator(Generator):
+class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     """
     Generator based on the pretrained GPT-Neo of Huggingface
     """
 
-    def __init__(self, config, pretrained_model="microsoft/CodeGPT-small-py"):
+    def __init__(self, config, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2"):
         super(PretrainedGPTGenerator, self).__init__(config)
-        self.config = config
+        self._config = config
         self.ntoken = config.vocab_size
-        self.transformer = GPT2Model.from_pretrained(pretrained_model)
+        self.transformer = AutoModelWithLMHead.from_pretrained(pretrained_model)
+        self.config = self.transformer.config
         self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
 
@@ -119,37 +124,22 @@ class PretrainedGPTGenerator(Generator):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def forward(self, src, prev_hidden=None):
-        output = self.transformer(src)
-        output = self.decoder(output.last_hidden_state)  # getting just the transformer logits without lm_head
-        #gumbel_t = f.gumbel_softmax(output, tau=self.temperature)
-        prediction = f.gumbel_softmax(output, tau=self.temperature)
-        next_token = torch.argmax(prediction, dim=2).detach()[:, -1]  # batch_size * 1
-
-        return prediction, None, next_token
+    def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None):
+        output = self.transformer(input_ids)
+        prediction = f.gumbel_softmax(output.logits, tau=self.temperature)
+        next_token = torch.argmax(output.logits, dim=2).detach()[:, -1]  # batch_size * 1
+        if return_dict:
+            return CausalLMOutputWithCrossAttentions(
+                logits=prediction
+            )
+        else:
+            return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):
-        """
-                Generating sample of context
-                TODO: for now just the prediction of next token - apply different encoding strategies later
-                :param context: previous token
-                :param sequence_length: length of sample
-                :return:
-                """
-        global all_preds  # batch_size * seq_len * vocab_size
-        num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
-        samples = torch.zeros(num_batch * batch_size, sequence_length).long()
-        samples.to(self.device)
-        src_mask = self.init_state(batch_size)
-        for b in range(num_batch):
-            inp = context
-            for i in range(sequence_length):
-                pred, _, next_token = self.forward(inp)
-                samples[b * batch_size:(b + 1) * batch_size, i] = next_token
-                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:]).to(self.device)
-        samples = samples[:num_samples]  # num_samples * seq_len
+        # context should be in shape (batch_size, inp_sequence_length)
+        return self.generate(context, max_length=self._config.sequence_length, num_samples=num_samples)
 
-        return samples
+
 
 
 
