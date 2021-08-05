@@ -173,6 +173,8 @@ class Trainer:
             iterator = iter(self.dataloader_eval)
             for i in range(10):
                 x, y = next(iterator)
+                x.to(self.devivce)
+                y.to(self.devivce)
                 pred, hidden, next_token = self.generator(x)
                 shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
                 shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
