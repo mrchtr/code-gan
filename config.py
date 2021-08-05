@@ -50,7 +50,7 @@ def init_config():
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 100000
+    config.nadv_steps = 2
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50

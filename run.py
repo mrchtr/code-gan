@@ -58,6 +58,7 @@ if __name__ == '__main__':
     for i in tqdm(range(0, len(content), mini_batch)):
         tokenized_reference_data += tokenizer.encode(content[i:i + mini_batch])
 
+    reference_data = TextDataset(inp=tokenized_reference_data, block_size=config.block_size)
 
     #assert len(tokenizer) == config.vocab_size
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
         raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
     # trainer
-    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger, reference_corpus=tokenized_reference_data)
+    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger, reference_corpus=reference_data)
     trainer.train()
 
     artifact = wandb.Artifact('model', type='model')

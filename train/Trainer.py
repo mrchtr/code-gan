@@ -1,3 +1,5 @@
+import math
+
 import torch
 import wandb
 from torch import nn, optim
@@ -44,6 +46,7 @@ class Trainer:
 
         self.dataset = dataset
         self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True, shuffle=True)
+        self.dataloader_eval = DataLoader(reference_corpus, self.batch_size, drop_last=True, shuffle=True)
         self.tokenizer = tokenizer
         self.test_file = config.validation_data
 
@@ -88,7 +91,8 @@ class Trainer:
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
-            self.evaluate_generator(i)
+            #self.evaluate_generator(i)
+            self.eval_generator()
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
@@ -108,6 +112,7 @@ class Trainer:
         #    bleu = bleu_score(sample, self.reference_corpus, max_n=i)
         #    self.logger.log({f"bleu-{i}": bleu})
 
+        #self.eval_generator()
 
         # ---- generate data
         try:
@@ -115,7 +120,7 @@ class Trainer:
             sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to('cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            print(f"Sample: {sample_str}")
+            #print(f"Sample: {sample_str}")
             # ---- logging to wandb
             text_table.add_data(epoch, sample_str)
             self.logger.log({"samples": text_table})
@@ -159,6 +164,23 @@ class Trainer:
             losses.append(loss_d.item())
 
         return np.mean(losses)
+
+    def eval_generator(self):
+        self.generator.eval()
+        if self.config.generator == "GPTCode":
+            perplexities = []
+            criterion = nn.CrossEntropyLoss()
+            iterator = iter(self.dataloader_eval)
+            for i in range(10):
+                x, y = next(iterator)
+                pred, hidden, next_token = self.generator(x)
+                shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
+                shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
+                loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                perplexities.append(math.exp(loss.item() / len(x)))
+            print(f"perplexity: {np.mean(perplexities)}")
+            self.logger.log({'perplexity': np.mean(perplexities)})
+        self.generator.train()
 
     def _pretrain_generator(self):
         print("Start pretraining of generator ...")
@@ -206,7 +228,8 @@ class Trainer:
             optimizer.step()
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
-            self.evaluate_generator(i)
+            #self.evaluate_generator(i)
+            self.eval_generator()
 
         print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')
