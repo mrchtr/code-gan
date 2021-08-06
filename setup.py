@@ -9,7 +9,8 @@ setup(
                       'torch',
                       'tqdm',
                       'sentencepiece',
-                      'nltk'
+                      'nltk',
+                      'datasets'
                       ],
     classifiers=[
         'Development Status :: 1 - Planning',
@@ -22,6 +23,5 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ]
-
 
 )

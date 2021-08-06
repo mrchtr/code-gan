@@ -28,7 +28,7 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.benchmark_dataset = 'codeXGlu'  # codexglu or none
+    config.benchmark_dataset = True  # True or False
     config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
@@ -47,14 +47,14 @@ def init_config():
     config.generator_optimizer = "AdamW"
     config.discriminator_optimizer = "AdamW"
 
-    config.sequence_length = 40  # size of generated examples
+    config.sequence_length = 20  # size of generated examples
     config.batch_size = 2
     # config.pretraining_epochs = 0
     config.pretraining_steps = 0
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 2
+    config.nadv_steps = 20000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
