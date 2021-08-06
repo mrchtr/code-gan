@@ -37,9 +37,7 @@ if __name__ == '__main__':
     else:
         tokenizer = CodeTokenizerResolver(config=config)
 
-    # initialize dataset
-    with open(config.training_data) as f:
-        content = "".join(f.readlines())
+
 
     # tokenize text - to reduce memory size mini batches will be proceeded
     if config.benchmark_dataset == True:
@@ -47,6 +45,10 @@ if __name__ == '__main__':
         dataset = TextDataset(inp=loaded, block_size=config.block_size)
     else:
         print(f"Start tokenization of training data ...")
+        # initialize dataset
+        with open(config.training_data) as f:
+            content = "".join(f.readlines())
+
         tokenized_training_data = []
         mini_batch = 500
         for i in tqdm(range(0, len(content), mini_batch)):
