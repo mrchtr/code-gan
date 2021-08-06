@@ -174,7 +174,7 @@ class Trainer:
             criterion = nn.CrossEntropyLoss()
             iterator = iter(self.dataloader)
             print("Start calculate perplexity for current iteration")
-            for i in tqdm(range(10000)):
+            for i in tqdm(range(500)):
                 x, y = next(iterator)
                 x = x.to(self.device)
                 y = y.to(self.device)
