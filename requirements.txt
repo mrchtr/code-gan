@@ -5,3 +5,5 @@ sentencepiece
 nltk
 wandb
 torchtext
+datasets
+aiohttp

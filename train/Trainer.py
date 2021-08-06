@@ -92,7 +92,9 @@ class Trainer:
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
             #self.evaluate_generator(i)
-            self.eval_generator()
+
+            if i % 200 == 0:
+                self.eval_generator()
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
@@ -170,8 +172,9 @@ class Trainer:
         if self.config.generator == "GPTCode":
             perplexities = []
             criterion = nn.CrossEntropyLoss()
-            iterator = iter(self.dataloader_eval)
-            for i in range(10):
+            iterator = iter(self.dataloader)
+            print("Start calculate perplexity for current iteration")
+            for i in tqdm(range(10000)):
                 x, y = next(iterator)
                 x = x.to(self.device)
                 y = y.to(self.device)
@@ -231,7 +234,7 @@ class Trainer:
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
             #self.evaluate_generator(i)
-            self.eval_generator()
+            #self.eval_generator()
 
         print(f"Mean losses: {np.mean(losses)}")
         torch.save(self.generator.state_dict(), 'generator.pth')

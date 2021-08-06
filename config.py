@@ -8,6 +8,9 @@ def init_config():
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+
+
+
     # generator model
     config.generator = "GPTCode"  # LSTM,  Transformer or GPTCode
 
@@ -25,6 +28,7 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
+    config.benchmark_dataset = 'codeXGlu'  # codexglu or none
     config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"

@@ -1,3 +1,4 @@
+from datasets import load_dataset
 from transformers import AutoTokenizer
 
 from config import init_config
@@ -40,27 +41,38 @@ if __name__ == '__main__':
         content = "".join(f.readlines())
 
     # tokenize text - to reduce memory size mini batches will be proceeded
-    print(f"Start tokenization of training data ...")
-    tokenized_training_data = []
-    mini_batch = 500
-    for i in tqdm(range(0, len(content), mini_batch)):
-        tokenized_training_data += tokenizer.encode(content[i:i+mini_batch])
+    if config.benchmark_dataset == True:
+        dataset = load_dataset("code_x_glue_cc_code_completion_token", "python", split='train')
+        iterator = iter(dataset)
+        tokenized_training_data = []
+        print(f"Start encoding dataset ...")
+        for i in tqdm(range(len(dataset))):
+            row = next(iterator)
+            input = ' '.join(row['input'])
+            tokenized_training_data += tokenizer.encode(input)
 
-    dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
+    else:
+        print(f"Start tokenization of training data ...")
+        tokenized_training_data = []
+        mini_batch = 500
+        for i in tqdm(range(0, len(content), mini_batch)):
+            tokenized_training_data += tokenizer.encode(content[i:i+mini_batch])
 
-    # creating reference dataset for evaluation
-    print(f"Start tokenization of evaluation data ...")
-    with open(config.validation_data) as f:
-        content = "".join(f.readlines())
+        dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
 
-    tokenized_reference_data = []
-    mini_batch = 500
-    for i in tqdm(range(0, len(content), mini_batch)):
-        tokenized_reference_data += tokenizer.encode(content[i:i + mini_batch])
+        # creating reference dataset for evaluation
+        print(f"Start tokenization of evaluation data ...")
+        with open(config.validation_data) as f:
+            content = "".join(f.readlines())
 
-    reference_data = TextDataset(inp=tokenized_reference_data, block_size=config.block_size)
+        tokenized_reference_data = []
+        mini_batch = 500
+        for i in tqdm(range(0, len(content), mini_batch)):
+            tokenized_reference_data += tokenizer.encode(content[i:i + mini_batch])
 
-    #assert len(tokenizer) == config.vocab_size
+        reference_data = TextDataset(inp=tokenized_reference_data, block_size=config.block_size)
+
+        #assert len(tokenizer) == config.vocab_size
 
     # initialize generator model
     if config.generator == "Transformer":
