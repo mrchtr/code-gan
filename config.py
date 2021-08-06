@@ -29,7 +29,8 @@ def init_config():
 
     # dataset configuration
     config.benchmark_dataset = True  # True or False
-    config.training_data = "./demo_code/out_train.txt"
+    #config.training_data = "./demo_code/out_train.txt"
+    config.training_data = "./demo_code/train.npy"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
     config.block_size = 16  # in case of LSTM / Memory Unit should be 1

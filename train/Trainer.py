@@ -93,8 +93,8 @@ class Trainer:
 
             #self.evaluate_generator(i)
 
-            if i % 200 == 0:
-                self.eval_generator()
+
+            self.eval_generator()
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
