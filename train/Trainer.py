@@ -46,7 +46,7 @@ class Trainer:
 
         self.dataset = dataset
         self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True, shuffle=True)
-        self.dataloader_eval = DataLoader(reference_corpus, self.batch_size, drop_last=True, shuffle=True)
+        #self.dataloader_eval = DataLoader(reference_corpus, self.batch_size, drop_last=True, shuffle=True)
         self.tokenizer = tokenizer
         self.test_file = config.validation_data
 
@@ -55,7 +55,7 @@ class Trainer:
         self.discriminator = self.discriminator.to(self.device)
 
         self.logger = logger
-        self.reference_corpus = reference_corpus
+        #self.reference_corpus = reference_corpus
 
     def train(self):
         """

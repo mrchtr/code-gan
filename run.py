@@ -87,7 +87,7 @@ if __name__ == '__main__':
         raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
     # trainer
-    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger, reference_corpus=reference_data)
+    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger)
     trainer.train()
 
     artifact = wandb.Artifact('model', type='model')
