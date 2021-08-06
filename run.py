@@ -1,4 +1,5 @@
 from datasets import load_dataset
+from numpy import load
 from transformers import AutoTokenizer
 
 from config import init_config
@@ -42,15 +43,8 @@ if __name__ == '__main__':
 
     # tokenize text - to reduce memory size mini batches will be proceeded
     if config.benchmark_dataset == True:
-        dataset = load_dataset("code_x_glue_cc_code_completion_token", "python", split='train')
-        iterator = iter(dataset)
-        tokenized_training_data = []
-        print(f"Start encoding dataset ...")
-        for i in tqdm(range(len(dataset))):
-            row = next(iterator)
-            input = ' '.join(row['input'])
-            tokenized_training_data += tokenizer.encode(input)
-
+        loaded = load(config.training_data)
+        dataset = TextDataset(inp=loaded, block_size=config.block_size)
     else:
         print(f"Start tokenization of training data ...")
         tokenized_training_data = []
