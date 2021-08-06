@@ -94,11 +94,12 @@ class Trainer:
             #self.evaluate_generator(i)
 
 
-            self.eval_generator()
+
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
-            if self.nadv_steps % 20 == 0:
+            if self.nadv_steps % 200 == 0:
+                self.eval_generator()
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
     def _generate_context(self):
