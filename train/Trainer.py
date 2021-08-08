@@ -61,7 +61,8 @@ class Trainer:
         """
         Main training loop. Including pretraining and adverserial training
         """
-
+        # pretrained model perplexity
+        self.eval_generator()
         self._pretrain_generator()
         self._adversarial_training()
 
@@ -98,7 +99,7 @@ class Trainer:
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
-            if self.nadv_steps % 200 == 0:
+            if i % 200 == 0:
                 self.eval_generator()
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
@@ -172,6 +173,7 @@ class Trainer:
         self.generator.eval()
         if self.config.generator == "GPTCode":
             perplexities = []
+            losses = []
             criterion = nn.CrossEntropyLoss()
             iterator = iter(self.dataloader)
             print("Start calculate perplexity for current iteration")
@@ -183,9 +185,10 @@ class Trainer:
                 shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
                 shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
                 loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                perplexities.append(math.exp(loss.item() / len(x)))
+                losses.append(loss.item())
+                perplexities.append(math.exp(loss.item() / len(x[0])))
             print(f"perplexity: {np.mean(perplexities)}")
-            self.logger.log({'perplexity': np.mean(perplexities)})
+            self.logger.log({'perplexity': np.mean(perplexities), 'eval_loss' : np.mean(losses)})
         self.generator.train()
 
     def _pretrain_generator(self):
