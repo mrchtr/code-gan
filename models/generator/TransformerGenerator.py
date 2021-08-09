@@ -126,7 +126,8 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None):
         output = self.transformer(input_ids)
-        prediction = f.gumbel_softmax(output.logits, tau=self.temperature)
+        #prediction = f.gumbel_softmax(output.logits, tau=self.temperature)
+        prediction = self.add_gumbel(output.logits, self.device)
         next_token = torch.argmax(output.logits, dim=2).detach()[:, -1]  # batch_size * 1
         if return_dict:
             return CausalLMOutputWithCrossAttentions(

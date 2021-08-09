@@ -183,12 +183,10 @@ class Trainer:
                 y = y.to(self.device)
                 pred, hidden, next_token = self.generator(x)
                 shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
-                shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
+                shift_labels = x[..., 1:].contiguous()  # removing the first tokens in each label sequence
                 loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
                 losses.append(loss.item())
                 perplexities.append(math.exp(loss.item()))
-                print(f"Should be (y)  : {self.tokenizer.decode(y[0])}")
-                print(f"Current output : {self.tokenizer.decode(x[0])}{self.tokenizer.decode(next_token[0])}")
             print(f"perplexity: {np.mean(perplexities)}")
             self.logger.log({'perplexity': np.mean(perplexities), 'eval_loss' : np.mean(losses)})
         self.generator.train()
