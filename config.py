@@ -49,7 +49,7 @@ def init_config():
     config.discriminator_optimizer = "AdamW"
 
     config.sequence_length = 20  # size of generated examples
-    start_sequence_len = 5
+    config.start_sequence_len = 5
     config.batch_size = 2
     # config.pretraining_epochs = 0
     config.pretraining_steps = 1
