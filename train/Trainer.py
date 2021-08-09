@@ -108,7 +108,7 @@ class Trainer:
             return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
                                                                                          self.config.block_size).to(self.device)
         else:
-            return self.dataset.get_random_real_sample(self.batch_size, self.config.block_size).to(self.device)
+            return self.dataset.get_random_real_sample(self.batch_size, self.config.start_sequence_len).to(self.device)
 
     def evaluate_generator(self, epoch):
         # calculate perplexit

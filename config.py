@@ -28,12 +28,12 @@ def init_config():
     config.discriminator_embedding_dim = 1
 
     # dataset configuration
-    config.benchmark_dataset = True  # True or False
+    config.benchmark_dataset = False  # True or False
     #config.training_data = "./demo_code/out_train.txt"
-    config.training_data = "./demo_code/train.npy"
+    config.training_data = "./demo_code/out_train.txt"
     config.validation_data = "./demo_code/out_test.txt"
     config.data_dir = "./demo_code"
-    config.block_size = 16  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
     config.vocab_size = 32000
     config.special_tokens = [
         '<BOF>',
@@ -49,9 +49,10 @@ def init_config():
     config.discriminator_optimizer = "AdamW"
 
     config.sequence_length = 20  # size of generated examples
+    start_sequence_len = 5
     config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 0
+    config.pretraining_steps = 1
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
