@@ -270,15 +270,15 @@ class Trainer:
 
     def update_temperature(self, temperature, i):
         """
-        Updating temperature of generator. For now just linear decrease.
+        Updating temperature of generator. Same methode like it is done in amazon Transformer GAN for music generation
         :param temperature: current temperature
         :param current_epoch: current epoch of training
         :param max_epoch: max epochs of training
         :return: temperature
         """
-        N = self.nadv_steps  # todo implement real method
-        i = N - i
-        return 1 + i / (N - 1) * (temperature - 1)
+        beta_max = self.config.temperature
+        N = self.nadv_steps
+        return beta_max ** (i / N)
 
 
     def get_metrics(self, gen_file, test_file):
