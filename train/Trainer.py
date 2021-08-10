@@ -13,7 +13,7 @@ from models.generator.Generator import Generator
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Bleu import Bleu
 from tqdm import tqdm
-text_table = wandb.Table(columns=["epoch", "sample"])
+text_table = wandb.Table(columns=["sample"])
 
 class Trainer:
     """
@@ -62,6 +62,7 @@ class Trainer:
         Main training loop. Including pretraining and adverserial training
         """
         # pretrained model perplexity
+        self.generate_sample()
         self.eval_generator()
         self._pretrain_generator()
         self._adversarial_training()
@@ -101,6 +102,7 @@ class Trainer:
 
             if i % 200 == 0:
                 self.eval_generator()
+                self.generate_sample()
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
     def _generate_context(self):
@@ -109,6 +111,20 @@ class Trainer:
                                                                                          self.config.block_size).to(self.device)
         else:
             return self.dataset.get_random_real_sample(self.batch_size, self.config.start_sequence_len).to(self.device)
+
+    def generate_sample(self):
+        try:
+            x = self._generate_context()
+            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to(
+                'cpu')  # array of sample tokens
+
+            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+            print(f"Given:    {self.tokenizer.decode(x[0])}")
+            print(f"Proposed: {sample_str}")
+            text_table.add_row(sample_str)
+            self.logger.log({"samples": text_table})
+        except:
+            print(f"Error while generating sample")
 
     def evaluate_generator(self, epoch):
         # calculate perplexit
