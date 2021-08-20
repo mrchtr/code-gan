@@ -113,7 +113,10 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         super(PretrainedGPTGenerator, self).__init__(config)
         self._config = config
         self.ntoken = config.vocab_size
-        self.transformer = AutoModelWithLMHead.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
+        self.transformer = GPT2Model.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
+        for param in self.transformer.parameters():
+            param.requires_grad = False
+
         self.config = self.transformer.config
         self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
@@ -127,8 +130,9 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None):
         output = self.transformer(input_ids)
         #prediction = f.gumbel_softmax(output.logits, tau=self.temperature)
-        prediction = self.add_gumbel(output.logits, self.device)
-        next_token = torch.argmax(output.logits, dim=2).detach()[:, -1]  # batch_size * 1
+        logits = self.decoder(output.last_hidden_state)
+        prediction = self.add_gumbel(logits, self.device)
+        next_token = torch.argmax(logits, dim=2).detach()[:, -1]  # batch_size * 1
         if return_dict:
             return CausalLMOutputWithCrossAttentions(
                 logits=prediction

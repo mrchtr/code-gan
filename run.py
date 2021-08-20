@@ -77,6 +77,7 @@ if __name__ == '__main__':
         generator = GeneratorLSTM(config)
     elif config.generator == "GPTCode":
         generator = PretrainedGPTGenerator(config)
+        print(generator)
     else:
         raise Exception(f"Can't create unknown generator {config.generator}")
 
