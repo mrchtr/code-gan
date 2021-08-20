@@ -10,7 +10,9 @@ setup(
                       'tqdm',
                       'sentencepiece',
                       'nltk',
-                      'datasets'
+                      'datasets',
+                      'jellyfish',
+                      'scikit-learn'
                       ],
     classifiers=[
         'Development Status :: 1 - Planning',

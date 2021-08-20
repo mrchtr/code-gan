@@ -48,7 +48,14 @@ def init_config():
     config.generator_optimizer = "AdamW"
     config.discriminator_optimizer = "AdamW"
 
-    config.sequence_length = 20  # size of generated examples
+    """
+    size of the generated example sequences. 
+    """
+    config.sequence_length = 20
+
+    """
+    size of the given context for the sequence generation
+    """
     config.start_sequence_len = 5
     config.batch_size = 2
     # config.pretraining_epochs = 0

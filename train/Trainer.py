@@ -10,6 +10,7 @@ from torchtext.data.metrics import bleu_score
 
 from models.discriminator.Discriminator import Discriminator
 from models.generator.Generator import Generator
+from train.Metrics import Metrics
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Bleu import Bleu
 from tqdm import tqdm
@@ -54,6 +55,7 @@ class Trainer:
         self.generator = self.generator.to(self.device)
         self.discriminator = self.discriminator.to(self.device)
 
+        self.metrics = Metrics(config.sequence_length)
         self.logger = logger
         #self.reference_corpus = reference_corpus
 
@@ -99,9 +101,9 @@ class Trainer:
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
-            if i % 200 == 0:
-                self.eval_generator()
-                torch.save(self.generator.state_dict(), 'generator.pth')
+
+            self.eval_generator()
+            torch.save(self.generator.state_dict(), 'generator.pth')
 
     def _generate_context(self):
         if self.config.noise_as_context:
@@ -171,24 +173,37 @@ class Trainer:
 
     def eval_generator(self):
         self.generator.eval()
-        if self.config.generator == "GPTCode":
-            perplexities = []
-            losses = []
-            criterion = nn.CrossEntropyLoss()
-            iterator = iter(self.dataloader)
-            print("Start calculate perplexity for current iteration")
-            for i in range(500):
-                x, y = next(iterator)
-                x = x.to(self.device)
-                y = y.to(self.device)
-                pred, hidden, next_token = self.generator(x)
-                shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
-                shift_labels = x[..., 1:].contiguous()  # removing the first tokens in each label sequence
-                loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                losses.append(loss.item())
-                perplexities.append(math.exp(loss.item()))
-            print(f"perplexity: {np.mean(perplexities)}")
-            self.logger.log({'perplexity': np.mean(perplexities), 'eval_loss' : np.mean(losses)})
+        with torch.no_grad():
+            """
+            if self.config.generator == "GPTCode":
+                perplexities = []
+                losses = []
+                criterion = nn.CrossEntropyLoss()
+                iterator = iter(self.dataloader)
+                for i in range(10):
+                    x, y = next(iterator)
+                    x = x.to(self.device)
+                    y = y.to(self.device)
+                    pred, hidden, next_token = self.generator(x)
+                    shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
+                    shift_labels = x[..., 1:].contiguous()  # removing the first tokens in each label sequence
+                    loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                    losses.append(loss.item())
+                    perplexities.append(math.exp(loss.item()))
+                print(f"perplexity: {np.mean(perplexities)}")
+                self.logger.log({'perplexity': np.mean(perplexities), 'eval_loss' : np.mean(losses)})
+            """
+            for i in range(10):
+                sample = self.dataset.get_random_real_sample(1, self.sequence_length)
+                x = sample[:,0:self.config.start_sequence_len]
+                reference = self.tokenizer.decode(sample[0])
+                output = self.generator.sample(x, self.sequence_length, 1)
+                predicition = self.tokenizer.decode(output[0])
+                euclidian, cos_sim, levenstein, bleu = self.metrics.get_similarity(predicition, reference)
+                self.logger.log({'euclidian': euclidian, 'cosisinus_sim': cos_sim, 'levenstein_dis': levenstein, 'blue' : bleu})
+
+
+
         self.generator.train()
 
     def _pretrain_generator(self):
