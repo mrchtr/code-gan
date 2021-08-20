@@ -211,6 +211,7 @@ class Trainer:
             for i in range(10):
                 sample = self.dataset.get_random_real_sample(1, self.sequence_length)
                 x = sample[:,0:self.config.start_sequence_len]
+                x = x .to(self.device)
                 reference = self.tokenizer.decode(sample[0])
                 output = self.generator.sample(x, self.sequence_length, 1)
                 predicition = self.tokenizer.decode(output[0])
