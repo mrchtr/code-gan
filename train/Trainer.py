@@ -102,9 +102,9 @@ class Trainer:
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature})
 
-
-            self.eval_generator()
-            torch.save(self.generator.state_dict(), 'generator.pth')
+            if i % 100 == 0:
+                self.eval_generator()
+                torch.save(self.generator.state_dict(), 'generator.pth')
 
     def _generate_context(self):
         if self.config.noise_as_context:
