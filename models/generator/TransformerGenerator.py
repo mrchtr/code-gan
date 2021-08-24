@@ -114,12 +114,15 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         self._config = config
         self.ntoken = config.vocab_size
         self.transformer = GPT2Model.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
-        for param in self.transformer.parameters():
-            param.requires_grad = False
-
         self.config = self.transformer.config
         self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
+
+        # freeze transformer for training
+        if config.freezing is True:
+            for param in self.transformer.parameters():
+                param.requires_grad = False
+
 
 
     def init_state(self, sz):
