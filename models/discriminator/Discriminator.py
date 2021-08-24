@@ -4,6 +4,8 @@ import torch
 import numpy as np
 import math
 
+from transformers import AutoModel
+
 
 class Discriminator(nn.Module):
     """
@@ -17,6 +19,22 @@ class Discriminator(nn.Module):
     def forward(self, inp):
         return self.dense(inp.type(torch.float32))
 
+class CodeBertDiscriminator(Discriminator):
+
+    def __init__(self):
+        super(Discriminator, self).__init__()
+        self.encoder = AutoModel.from_pretrained("microsoft/codebert-base")
+        self.dropout = nn.Dropout(0.5)
+        self.dense = nn.Linear(self.encoder.config.hidden_size, 1)
+
+        # freezing model
+        for param in self.encoder.parameters():
+            param.requieres_grad = False
+
+    def forward(self, inp):
+        encoded = self.encoder(inp)
+        pred = self.dropout(encoded.pooler_output)
+        return self.dense(pred)
 
 class CNNDiscriminator(Discriminator):
     """

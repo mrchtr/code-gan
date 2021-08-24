@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 
 from config import init_config
 from data.Dataset import TextDataset
-from models.discriminator.Discriminator import CNNDiscriminator
+from models.discriminator.Discriminator import CNNDiscriminator, CodeBertDiscriminator
 from models.generator.Generator import GeneratorLSTM
 
 from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
@@ -83,7 +83,8 @@ if __name__ == '__main__':
 
     # initialize discriminator model
     if config.discriminator == "CNN":
-        discriminator = CNNDiscriminator(config)
+        #discriminator = CNNDiscriminator(config)
+        discriminator = CodeBertDiscriminator()
     else:
         raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
