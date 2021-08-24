@@ -148,7 +148,3 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         return self.generate(context, max_length=self._config.sequence_length, num_samples=num_samples)
 
 
-
-
-
-
