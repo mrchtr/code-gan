@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     # initialize discriminator model
     if config.discriminator == "CNN":
-        #discriminator = CNNDiscriminator(config)
-        discriminator = CodeBertDiscriminator()
+        discriminator = CNNDiscriminator(config)
+        #discriminator = CodeBertDiscriminator()
     else:
         raise Exception(f"Can't create unknown discriminator {config.discriminator}")
 
