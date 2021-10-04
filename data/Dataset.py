@@ -26,6 +26,7 @@ class TextDataset(Dataset):
 
     def __getitem__(self, index):
         offset = index + self.block_size
+
         return (
             torch.tensor(self.data[index:offset]),
             torch.tensor(self.data[index+1:offset+1]),

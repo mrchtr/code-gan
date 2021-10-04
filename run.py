@@ -1,6 +1,4 @@
-from datasets import load_dataset
 from numpy import load
-from transformers import AutoTokenizer
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -14,82 +12,53 @@ import os
 from tqdm import tqdm
 import wandb
 
-project_name = "code-gan-debug"
-
-#os.environ["WANDB_MODE"] = "offline"
-
 def init_wandb_logger(config):
+    project_name = "code-gan-debug"
     return wandb.init(project=project_name, config=config)
 
+def tokenize_files(source, tokenizer):
+    with open(source) as f:
+        content = "".join(f.readlines())
+
+        tokenized_data = []
+        mini_batch = 500
+        for i in tqdm(range(0, len(content), mini_batch)):
+            tokenized_data += tokenizer.encode(content[i:i + mini_batch]).ids
+    return tokenized_data
+
+def load_datasets(config, tokenizer):
+    training_data = tokenize_files(config.training_data, tokenizer)
+    train = TextDataset(inp=training_data, block_size=config.block_size)
+
+    eval_data = tokenize_files(config.validation_data, tokenizer)
+    eval = TextDataset(inp=eval_data, block_size=config.block_size)
+    return train, eval
+
 if __name__ == '__main__':
+
     config = init_config()
+
+    if config.debug:
+        os.environ["WANDB_MODE"] = "offline"
+
     logger = init_wandb_logger(config)
 
     print("Start Code-GAN training with the following configuration: ")
-    print(f"Generator {config.generator}")
-    print(f"Discriminator {config.discriminator}")
+    print(f"Generator: {config.generator}")
+    print(f"Discriminator: {config.discriminator}")
+    print(60 * "-")
 
     # initialize tokenizer
-    if config.generator == "GPTCode":
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py-adaptedGPT2")
-        #tokenizer.pad_token_id = tokenizer.eos_token_id
-        config.vocab_size = len(tokenizer)
-    else:
-        tokenizer = CodeTokenizerResolver(config=config)
+    tokenizer = CodeTokenizerResolver(config=config).get()
+    train, eval = load_datasets(config, tokenizer)
 
-
-
-    # tokenize text - to reduce memory size mini batches will be proceeded
-    if config.benchmark_dataset == True:
-        loaded = load(config.training_data)
-        dataset = TextDataset(inp=loaded, block_size=config.block_size)
-    else:
-        print(f"Start tokenization of training data ...")
-        # initialize dataset
-        with open(config.training_data) as f:
-            content = "".join(f.readlines())
-
-        tokenized_training_data = []
-        mini_batch = 500
-        for i in tqdm(range(0, len(content), mini_batch)):
-            tokenized_training_data += tokenizer.encode(content[i:i+mini_batch])
-
-        dataset = TextDataset(inp=tokenized_training_data, block_size=config.block_size)
-
-        # creating reference dataset for evaluation
-        print(f"Start tokenization of evaluation data ...")
-        with open(config.validation_data) as f:
-            content = "".join(f.readlines())
-
-        tokenized_reference_data = []
-        mini_batch = 500
-        for i in tqdm(range(0, len(content), mini_batch)):
-            tokenized_reference_data += tokenizer.encode(content[i:i + mini_batch])
-
-        reference_data = TextDataset(inp=tokenized_reference_data, block_size=config.block_size)
-
-        #assert len(tokenizer) == config.vocab_size
-
-    # initialize generator model
-    if config.generator == "Transformer":
-        generator = TransformerGenerator(config)
-    elif config.generator == "LSTM":
-        generator = GeneratorLSTM(config)
-    elif config.generator == "GPTCode":
-        generator = PretrainedGPTGenerator(config)
-        print(generator)
-    else:
-        raise Exception(f"Can't create unknown generator {config.generator}")
-
-    # initialize discriminator model
+    generator = PretrainedGPTGenerator(config)
     if config.discriminator == "CNN":
-        #discriminator = CNNDiscriminator(config)
-        discriminator = CodeBertDiscriminator()
+        discriminator = CNNDiscriminator(config)
     else:
-        raise Exception(f"Can't create unknown discriminator {config.discriminator}")
+        discriminator = CodeBertDiscriminator()
 
-    # trainer
-    trainer = Trainer(generator, discriminator, dataset, tokenizer, config, logger=logger)
+    trainer = Trainer(generator, discriminator, train, tokenizer, config, logger=logger)
     trainer.train()
 
     artifact = wandb.Artifact('model', type='model')

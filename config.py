@@ -5,10 +5,41 @@ import torch
 def init_config():
     config = wandb.config
 
+    """
+    If debug is true, a small part of the dataset will be procceded instead of the whole.
+    To run in production mode, please the debug to false.
+    Furthermore, no metrics will be log into wandb if debug is true.  
+    """
+    config.debug = True
+
+    # project name in wandb
+    config.project_name = "code-gan"
+
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+    # dataset configuration
+    config.benchmark_dataset = False  # True or False
+    # config.training_data = "./demo_code/out_train.txt"
+    config.data_dir = "./data/dataset"
+    config.training_data = "./demo_code/out_train.txt"
+    config.validation_data = "./demo_code/out_test.txt"
 
+    # tokenizer configuration
+    config.vocab_size = 32000
+    config.special_tokens = [
+        '<BOF>',
+        '<EOF>',
+        '<EOL>',
+        '<COMMENT>',
+        '<STR_LIT>',
+        '<INT_LIT>',
+        '<INDENT>',
+        '<DEDENT>',
+    ]
+
+
+    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
 
 
     # generator model
@@ -27,21 +58,7 @@ def init_config():
     config.discriminator = "CNN"
     config.discriminator_embedding_dim = 1
 
-    # dataset configuration
-    config.benchmark_dataset = False  # True or False
-    #config.training_data = "./demo_code/out_train.txt"
-    config.training_data = "./demo_code/out_train.txt"
-    config.validation_data = "./demo_code/out_test.txt"
-    config.data_dir = "./demo_code"
-    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
-    config.vocab_size = 32000
-    config.special_tokens = [
-        '<BOF>',
-        '<EOF>',
-        '<COMMENT>',
-        '<STR_LIT>',
-        '<INT_LIT>'
-    ]
+
 
     # training related parameter & hyper parameters
     config.pretrain_optimizer = "AdamW"
@@ -67,7 +84,7 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
-    config.loss_type = "rsgan"
+    config.loss_type = "wgan"
     config.noise_as_context = False
     config.freezing = True
     return config

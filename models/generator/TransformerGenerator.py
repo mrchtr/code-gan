@@ -9,7 +9,7 @@ import torch.nn.functional as f
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
-from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead
+from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead, TransfoXLConfig, GPT2Config
 from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
@@ -53,7 +53,7 @@ class TransformerGenerator(Generator):
 
     def init_state(self, sz):
         """
-        Generates square subsequent mask. For consitency method is called init state.
+        Generates square subsequent mask. For consistency method is called init state.
         :param sz: batch_size
         :return:
         """
@@ -113,7 +113,9 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         super(PretrainedGPTGenerator, self).__init__(config)
         self._config = config
         self.ntoken = config.vocab_size
-        self.transformer = GPT2Model.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
+        #self.transformer = GPT2Model.from_pretrained(pretrained_model, pad_token_id=eos_token_id)
+        configuration = GPT2Config()
+        self.transformer = GPT2Model(configuration)
         self.config = self.transformer.config
         self.transformer.resize_token_embeddings(self.ntoken)
         self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
@@ -130,21 +132,42 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None):
-        output = self.transformer(input_ids)
-        #prediction = f.gumbel_softmax(output.logits, tau=self.temperature)
-        logits = self.decoder(output.last_hidden_state)
-        prediction = self.add_gumbel(logits, self.device)
-        next_token = torch.argmax(logits, dim=2).detach()[:, -1]  # batch_size * 1
+    def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None,
+                labels=None, gumbel=True):
+        """
+        TransformerGAN step forward:
+        :param input_ids:
+        :param prev_hidden:
+        :param return_dict:
+        :param output_attentions:
+        :param output_hidden_states:
+        :param labels:
+        :param gumbel:
+        :return:
+            - pred: used for adversarial training backwards step, and sample generation
+            -
+        """
+        out = self.transformer(input_ids, labels)  # encoder
+        logits = self.decoder(out.last_hidden_state)  # linear layer
+        gumbel_t = self.add_gumbel(logits, self.device)  # gumbel_t layer
+        prediction = f.softmax(gumbel_t * self.temperature, dim=1)  # prediction
+
+        next_token = torch.argmax(gumbel_t, dim=1).detach()  # next token - not part of autograde graph
+
+        # needed for sequence generation, not part of the autograde graph
+        # softmax operation will be applied inside the huggingface generation module
+        generation_logits = torch.mul(logits, self.temperature).detach()
+
         if return_dict:
             return CausalLMOutputWithCrossAttentions(
-                logits=prediction
+                logits=generation_logits
             )
         else:
             return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):
         # context should be in shape (batch_size, inp_sequence_length)
-        return self.generate(context, max_length=self._config.sequence_length, num_samples=num_samples)
+        return self.generate(context, max_length=self._config.sequence_length, num_samples=num_samples, num_beams=5)
+
 
 

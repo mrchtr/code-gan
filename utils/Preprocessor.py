@@ -3,12 +3,13 @@ from tokenize import tokenize, untokenize, NUMBER, STRING, INDENT, DEDENT, COMME
 from io import BytesIO
 
 COMMENT_TOKEN = "<COMMENT>"
-INT_TOKEN = "<INT_LIST>"
+INT_TOKEN = "<INT_LIT>"
 STR_TOKEN = "<STR_LIT>"
 INDENT_TOKEN = "<INDENT>"
 DEDENT_TOKEN = "<DEDENT>"
 BOF_TOKEN = "<BOF>"
 EOF_TOKEN = "<EOF>"
+EOL_TOKEN = "<EOL>"
 
 
 def preprocess(inp):
@@ -25,9 +26,10 @@ def preprocess(inp):
     inp = untokenize(inp).decode('utf-8')
     inp = replace_whitespace_not_needed(inp)
     inp = unquote_special_tokens(inp)
-    inp = f"{BOF_TOKEN} {inp} {EOF_TOKEN}"
     inp = remove_not_needed_tokens(inp)
     inp = remove_empty_lines(inp)
+    inp = remove_line_breaks(inp)
+    inp = f"{BOF_TOKEN}{inp}{EOF_TOKEN}"
     return inp
 
 
@@ -48,6 +50,9 @@ def remove_empty_lines(inp):
     inp = inp.split("\n")
     inp = [x for x in inp if x.strip() != ""]
     return "\n".join(inp)
+
+def remove_line_breaks(inp):
+    return inp.replace("\n", EOL_TOKEN)
 
 def clean_text(rgx_list, text, replacement=''):
     """
@@ -72,18 +77,23 @@ def replace_literals(inp):
     result = []
     for toknum, tokval, _, _, _ in g:
         if toknum == NUMBER:  # replace NUMBER tokens with <INT_LIT>
+            """
             result.extend([
                 (STRING, repr(INT_TOKEN))
             ])
-        elif toknum == STRING:
+            """
+        elif toknum == STRING and len(tokval)-2 > 15: # -2 cause the " are part of the string here
             result.extend([
                 (STRING, repr(STR_TOKEN))
             ])
 
         elif toknum == COMMENT:
+            """
+            remove comment completly
             result.extend([
                 (STRING, repr(COMMENT_TOKEN))
-            ])
+            ])"""
+            continue
 
         elif toknum == INDENT:
 
@@ -98,3 +108,29 @@ def replace_literals(inp):
             result.append((toknum, tokval))
 
     return result
+
+def postprocess(inp):
+    """
+    Postprocessed the input back to valid source code.
+    :param inp:
+    :return: source code
+    """
+    lines = inp.split(EOL_TOKEN)
+    out = []
+    indent_count = 0
+    for line in lines:
+        if INDENT_TOKEN in line:
+            line = line.replace(INDENT_TOKEN, "")
+            indent_count+=1
+        if DEDENT_TOKEN in line:
+            line = line.replace(DEDENT_TOKEN, "")
+            indent_count-=1
+        if indent_count < 0:
+            out = ["\t" + x for x in out]
+            indent_count = 0
+
+        line = line.replace(BOF_TOKEN, "")
+        line = line.replace(EOF_TOKEN, "")
+        indent = "\t" * indent_count
+        out.append(f"{indent}{line}")
+    return "\n".join(out)

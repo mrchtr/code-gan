@@ -1,4 +1,4 @@
-from utils.Preprocessor import preprocess
+from utils.Preprocessor import preprocess, postprocess
 s = '''
 from data.CodeDataset import CodeDataset
 from models.Discriminator import CNNDiscriminator, Discriminator
@@ -13,6 +13,7 @@ embedding_dim = 32  # size of the word vectors in the lookup table - indices are
 
 def sample_print(tokenizer):
     sample = "I'am a joke ;)"
+    sample = "I'am a longer joke that is more then 15 chars ;)"
     tokenized = tokenizer.tokenize(sample)
     input_ids =    tokenizer.convert_tokens_to_ids(tokenized)
     output = tokenizer.convert_ids_to_tokens(input_ids)
@@ -40,7 +41,8 @@ if __name__ == '__main__':
 
     # init generator
     n_vocab = dataset.vocab_size()
-
+    if true:
+        print("Hello World")
 
     generator = GeneratorLSTM(n_vocab=n_vocab, embedding_dim=embedding_dim, hidden_dim=128, num_layers=1)
     print(f"Generator device: {generator.device}")
@@ -52,5 +54,6 @@ if __name__ == '__main__':
     l, l1, l2 = trainer.train(pretrain_epochs=2)
 
 '''
-
-print(preprocess(s))
+proceeded = preprocess(s)
+print(proceeded)
+print(postprocess(proceeded))

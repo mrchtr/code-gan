@@ -9,3 +9,4 @@ datasets
 aiohttp
 jellyfish
 scikit-learn
+GitPython

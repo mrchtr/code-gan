@@ -12,7 +12,8 @@ setup(
                       'nltk',
                       'datasets',
                       'jellyfish',
-                      'scikit-learn'
+                      'scikit-learn',
+                      'GitPython'
                       ],
     classifiers=[
         'Development Status :: 1 - Planning',

@@ -120,8 +120,9 @@ class Trainer:
                 'cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            print(f"Given:    {self.tokenizer.decode(x[0])}")
-            print(f"Proposed: {sample_str}")
+            print(f"Given:        {self.tokenizer.decode(x[0].numpy())}")
+            print(f"Proposed:     {sample_str}")
+            print(f"Ground Truth: {sample_str}")
             text_table.add_row(sample_str)
             self.logger.log({"samples": text_table})
         except:
@@ -212,9 +213,9 @@ class Trainer:
                 sample = self.dataset.get_random_real_sample(1, self.sequence_length)
                 x = sample[:,0:self.config.start_sequence_len]
                 x = x .to(self.device)
-                reference = self.tokenizer.decode(sample[0])
+                reference = self.tokenizer.decode(sample[0].numpy(), skip_special_tokens=False)
                 output = self.generator.sample(x, self.sequence_length, 1)
-                predicition = self.tokenizer.decode(output[0])
+                predicition = self.tokenizer.decode(sample[0].numpy(), skip_special_tokens=False)
                 euclidian, cos_sim, levenstein, bleu = self.metrics.get_similarity(predicition, reference)
                 self.logger.log({'euclidian': euclidian, 'cosisinus_sim': cos_sim, 'levenstein_dis': levenstein, 'blue' : bleu})
 
@@ -254,6 +255,8 @@ class Trainer:
             pred, hidden, next_token = self.generator(x, hidden)
 
             if self.config.generator == "GPTCode":
+                #outputs = model(work_jokes_tens, labels=work_jokes_tens)
+                #loss, logits = outputs[:2]
                 shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
                 shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
                 loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
@@ -265,6 +268,7 @@ class Trainer:
 
             optimizer.zero_grad()
             loss.backward()
+            print(loss)
             optimizer.step()
             losses.append(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
@@ -293,6 +297,13 @@ class Trainer:
             d_loss = d_loss_real + d_loss_fake
 
             g_loss = bce_loss(d_out_fake, torch.ones_like(d_out_fake))
+
+        elif self.config.loss_type == "wgan":  # 'wgan' or 'wgan-gp'
+            d_loss_real = d_out_real.mean()
+            d_loss_fake = d_out_fake.mean()
+            d_loss = -d_loss_real + d_loss_fake
+            g_loss = -d_loss_fake
+
         else: # relativistic standard GAN (rsgan)
             d_loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real)).to(self.device)
             g_loss = bce_loss(d_out_fake - d_out_real, torch.ones_like(d_out_fake)).to(self.device)
@@ -316,3 +327,34 @@ class Trainer:
         for i in range(2, 6):
             bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name=f"blue-{i}")
             self.logger.log({f"bleu-{i}": bleu.get_bleu()})
+
+
+    def calc_gradient_penalty(self, real_data, fake_data, LAMBDA=10):
+        alpha = torch.rand([real_data.shape[0], 1, 1], self.device)
+        alpha = alpha.expand(real_data.size())
+
+        interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+
+        interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+
+        if 'bert' in self.cfg.DISCRIMINATOR.type:
+            interpolates = torch.einsum(
+                "ve,bcv -> bce",
+                self.discriminator.bert.embeddings.word_embeddings.weight,
+                interpolates,
+            )
+            disc_interpolates = self.discriminator(inputs_embeds=interpolates)[0][:, 0]
+        elif 'cnn' in self.cfg.DISCRIMINATOR.type:
+            disc_interpolates = self.discriminator(interpolates)
+
+        gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                                        grad_outputs=torch.ones(disc_interpolates.size(),
+                                                                device=real_data.device),
+                                        create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradients = gradients.view(real_data.shape[0], -1)
+
+        # https://github.com/igul222/improved_wgan_training/blob/master/gan_language.py
+        slopes = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+        gradient_penalty = ((slopes - 1.) ** 2).mean() * LAMBDA
+
+        return gradient_penalty
