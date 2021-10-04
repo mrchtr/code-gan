@@ -32,6 +32,17 @@ class TextDataset(Dataset):
             torch.tensor(self.data[index+1:offset+1]),
         )
 
+    def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len):
+        context = []
+        ground_truth = []
+
+        for _ in range(batch_size):
+            sample = self.__get_random_sample(seq_len)
+            context.append(sample[0:start_len])
+            ground_truth.append(sample)
+
+        return torch.tensor(context), torch.tensor(ground_truth)
+
     def get_random_real_sample(self, batch_size, seq_len):
         samples = [self.__get_random_sample(seq_len) for _ in range(batch_size)]
         return torch.tensor(samples)

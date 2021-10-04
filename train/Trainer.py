@@ -88,9 +88,11 @@ class Trainer:
 
         for i in tqdm(range(self.nadv_steps)):
             # context should be of shape (batch_size, block_size)
-            x = self._generate_context()
-            loss_g = self.adv_train_generator(x, generator_optimizer)
-            loss_d = self.adv_train_discriminator(x, discriminator_optimizer)
+            x, real_data = self._generate_context()
+
+
+            loss_g = self.adv_train_generator(x, real_data, generator_optimizer)
+            loss_d = self.adv_train_discriminator(x, real_data, discriminator_optimizer)
 
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
@@ -111,18 +113,19 @@ class Trainer:
             return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
                                                                                          self.config.block_size).to(self.device)
         else:
-            return self.dataset.get_random_real_sample(self.batch_size, self.config.start_sequence_len).to(self.device)
+            context, ground_truth = self.dataset.get_random_context_with_ground_truth(self.batch_size, self.config.start_sequence_len, self.config.sequence_length)
+            return context.to(self.device), ground_truth.to(self.device)
 
     def generate_sample(self):
         try:
-            x = self._generate_context()
-            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to(
+            context, ground_truth = self._generate_context()
+            sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1).to(
                 'cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            print(f"Given:        {self.tokenizer.decode(x[0].numpy())}")
+            print(f"Given:        {self.tokenizer.decode(context[0].numpy())}")
             print(f"Proposed:     {sample_str}")
-            print(f"Ground Truth: {sample_str}")
+            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].numpy())}")
             text_table.add_row(sample_str)
             self.logger.log({"samples": text_table})
         except:
@@ -149,11 +152,9 @@ class Trainer:
         except:
             print(f"Error while evaluation")
 
-    def adv_train_generator(self, x, optimizer):
+    def adv_train_generator(self, x, real_data, optimizer):
         losses = []
         for i in range(self.g_steps):
-            real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(
-                self.device)
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=self.batch_size).to(self.device)
 
             discriminator_real_out = self.discriminator(real_data)
@@ -168,11 +169,9 @@ class Trainer:
 
         return np.mean(losses)
 
-    def adv_train_discriminator(self, x, optimizer):
+    def adv_train_discriminator(self, x, real_data, optimizer):
         losses = []
         for i in range(self.d_steps):
-            real_data = self.dataset.get_random_real_sample(self.batch_size, self.sequence_length).to(
-                self.device)
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=self.batch_size).to(self.device)
 
             discriminator_real_out = self.discriminator(real_data)
@@ -327,34 +326,3 @@ class Trainer:
         for i in range(2, 6):
             bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name=f"blue-{i}")
             self.logger.log({f"bleu-{i}": bleu.get_bleu()})
-
-
-    def calc_gradient_penalty(self, real_data, fake_data, LAMBDA=10):
-        alpha = torch.rand([real_data.shape[0], 1, 1], self.device)
-        alpha = alpha.expand(real_data.size())
-
-        interpolates = alpha * real_data + ((1 - alpha) * fake_data)
-
-        interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
-
-        if 'bert' in self.cfg.DISCRIMINATOR.type:
-            interpolates = torch.einsum(
-                "ve,bcv -> bce",
-                self.discriminator.bert.embeddings.word_embeddings.weight,
-                interpolates,
-            )
-            disc_interpolates = self.discriminator(inputs_embeds=interpolates)[0][:, 0]
-        elif 'cnn' in self.cfg.DISCRIMINATOR.type:
-            disc_interpolates = self.discriminator(interpolates)
-
-        gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
-                                        grad_outputs=torch.ones(disc_interpolates.size(),
-                                                                device=real_data.device),
-                                        create_graph=True, retain_graph=True, only_inputs=True)[0]
-        gradients = gradients.view(real_data.shape[0], -1)
-
-        # https://github.com/igul222/improved_wgan_training/blob/master/gan_language.py
-        slopes = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
-        gradient_penalty = ((slopes - 1.) ** 2).mean() * LAMBDA
-
-        return gradient_penalty
