@@ -2,7 +2,7 @@ from numpy import load
 
 from config import init_config
 from data.Dataset import TextDataset
-from models.discriminator.Discriminator import CNNDiscriminator, CodeBertDiscriminator
+from models.discriminator.Discriminator import CNNDiscriminator, CodeBertDiscriminator, RelGAN_D
 from models.generator.Generator import GeneratorLSTM
 
 from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     generator = PretrainedGPTGenerator(config)
     if config.discriminator == "CNN":
-        discriminator = CNNDiscriminator(config)
+        discriminator = RelGAN_D(config)
     else:
         discriminator = CodeBertDiscriminator()
 

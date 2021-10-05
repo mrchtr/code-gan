@@ -167,7 +167,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def sample(self, context, sequence_length, batch_size, num_samples=1):
         # context should be in shape (batch_size, inp_sequence_length)
-        return self.generate(context, max_length=self._config.sequence_length, num_samples=num_samples, num_beams=5)
+        return self.generate(context, max_length=self._config.sequence_length, num_samples=1, num_beams=5)
 
 
 
