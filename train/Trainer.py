@@ -172,6 +172,7 @@ class Trainer:
 
             if i % 100 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
+                self.generate_sample()
 
 
     def _generate_context(self, validation_set = False):
