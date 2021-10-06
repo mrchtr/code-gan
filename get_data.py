@@ -14,15 +14,15 @@ from utils.Preprocessor import preprocess
 
 config = init_config()
 debug = config.debug
-train_name = "100k_train"
-eval_name = "50k_eval"
+train_name = "./data/100k_train"
+eval_name = "./data/50k_eval"
 
 
 def get_data():
     """
     Download all files of the 150k dataset.
     """
-    filename = "./150k_sources/github_repos.txt"
+    filename = "./data/150k_sources/github_repos.txt"
 
     # load all urls
     with open(filename) as f:
@@ -54,7 +54,7 @@ def get_data():
         print(f"Dir already exsits")
 
     # load train files
-    with open("./150k_sources/python100k_train.txt") as f:
+    with open("./data/150k_sources/python100k_train.txt") as f:
         train_paths = f.readlines()
 
     not_found = []
@@ -74,7 +74,7 @@ def get_data():
     print(f"not founded: {len(not_found)}")
 
     # load test files
-    with open("./150k_sources/python50k_eval.txt") as f:
+    with open("./data/150k_sources/python50k_eval.txt") as f:
         train_paths = f.readlines()
 
     found_2 = []
