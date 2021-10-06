@@ -68,12 +68,12 @@ def init_config():
     """
     size of the generated example sequences. 
     """
-    config.sequence_length = 20
+    config.sequence_length = 20 #75
 
     """
     size of the given context for the sequence generation
     """
-    config.start_sequence_len = 10
+    config.start_sequence_len = 10 #25
     config.batch_size = 2
     # config.pretraining_epochs = 0
     config.pretraining_steps = 10

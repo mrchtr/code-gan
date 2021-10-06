@@ -50,6 +50,7 @@ if __name__ == '__main__':
 
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
+    config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
     train, eval = load_datasets(config, tokenizer)
 
     generator = PretrainedGPTGenerator(config)
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     else:
         discriminator = CodeBertDiscriminator()
 
-    trainer = Trainer(generator, discriminator, train, tokenizer, config, logger=logger)
+    trainer = Trainer(generator, discriminator, train, tokenizer, config, logger=logger, dataset_eval=eval)
     trainer.train()
 
     artifact = wandb.Artifact('model', type='model')

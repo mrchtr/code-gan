@@ -1,8 +1,11 @@
 import math
 
+import jellyfish
 import torch
 import wandb
+from sklearn.metrics import accuracy_score
 from torch import nn, optim
+from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 import torch.nn.functional as f
 
@@ -25,7 +28,7 @@ class Trainer:
     Holding both models for the adversarial training and the main training loop.
     """
 
-    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None, reference_corpus=None):
+    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None, dataset_eval = None):
         """
         :param generator: Generator model
         :param discriminator: Discriminator model
@@ -51,6 +54,7 @@ class Trainer:
         self.discriminator_optimizer = config.discriminator_optimizer
 
         self.dataset = dataset
+        self.dataset_eval = dataset_eval
         self.dataloader = DataLoader(dataset, self.batch_size, drop_last=True, shuffle=True)
         # self.dataloader_eval = DataLoader(reference_corpus, self.batch_size, drop_last=True, shuffle=True)
         self.tokenizer = tokenizer
@@ -80,11 +84,15 @@ class Trainer:
         """
         # pretrained model perplexity
         self.generate_sample()
+
+        print("Validate generator initial state: ")
+        self.eval_generator()
+
         self._pretrain_generator()
         self._adversarial_training()
 
         # final evaluation
-        self.eval_generator()
+        self.eval_generator(validation_set=True)
 
     def generate_sample(self):
         print("Testing sample generation of random initialized generator: ")
@@ -152,49 +160,34 @@ class Trainer:
             loss_d = self.adv_train_discriminator(x, real_data, discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
-            self.eval_generator()
+            bleu, es, ppl, accuracy   = self.eval_generator()
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
-                             "temperature": self.generator.temperature})
+                             "temperature": self.generator.temperature, "generator/bleu": bleu,
+                             "generator/edit_similarity": es,
+                             "generator/ppl": ppl,
+                             "discriminator/accuracy": accuracy})
 
             if i % 100 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
 
-    def _generate_context(self):
+    def _generate_context(self, validation_set = False):
+        if validation_set:
+            dataset = self.dataset_eval
+        else:
+            dataset = self.dataset
         if self.config.noise_as_context:
             return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
                                                                                             self.config.block_size).to(
                 self.device)
         else:
-            context, ground_truth = self.dataset.get_random_context_with_ground_truth(self.batch_size,
+            context, ground_truth = dataset.get_random_context_with_ground_truth(self.batch_size,
                                                                                       self.config.start_sequence_len,
                                                                                       self.config.sequence_length)
             return context.to(self.device), ground_truth.to(self.device)
-
-    def evaluate_generator(self, epoch):
-        # calculate perplexit
-        # for i in range(2, 6):
-        #    bleu = bleu_score(sample, self.reference_corpus, max_n=i)
-        #    self.logger.log({f"bleu-{i}": bleu})
-
-        # self.eval_generator()
-
-        # ---- generate data
-        try:
-            x = self._generate_context()
-            sample = self.generator.sample(x, self.sequence_length, self.batch_size, num_samples=1).to(
-                'cpu')  # array of sample tokens
-
-            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            # print(f"Sample: {sample_str}")
-            # ---- logging to wandb
-            text_table.add_data(epoch, sample_str)
-            self.logger.log({"samples": text_table})
-        except:
-            print(f"Error while evaluation")
 
     def adv_train_generator(self, x, real_data, optimizer):
         losses = []
@@ -232,49 +225,59 @@ class Trainer:
 
         return np.mean(losses)
 
-    def eval_generator(self):
+    def eval_generator(self, validation_set=False):
+        """
+        Provide following metrics:
+        - BLEU Score : how could the train set was learned
+        - Classifier Accuracy : lower accuracy, better generated results
+        - Edit Similarity
+        - Perplexity
+        :return:
+        """
         self.generator.eval()
+        self.discriminator.eval()
+
+        bleu = []
+        levenstein = []
+
         with torch.no_grad():
 
             # get context
-            x, real_data = self._generate_context()
+            context_token, real_data_token = self._generate_context()
 
             # create sample
-            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
+            generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
             # get string represenation
-            generated_data = self.tokenizer.decode_batch(generated_data.numpy(), skip_special_tokens=False)
-            real_data = self.tokenizer.decode_batch(real_data.numpy(), skip_special_tokens=False)
-            bleu = []
-            nll = []
-            perplexity = []
-            edit_sm = []
+            generated_data_str = self.tokenizer.decode_batch(generated_data_token.numpy(), skip_special_tokens=False)
+            real_data_str = self.tokenizer.decode_batch(real_data_token.numpy(), skip_special_tokens=False)
 
-            # bleu
-            for generated, real in generated_data, real_data:
+
+
+            # bleu & levenstein
+            for generated, real in generated_data_str, real_data_str:
                 bleu.append(get_bleu(generated, real))
+                levenstein.append(jellyfish.levenshtein_distance(generated, real))
 
-            # generator metrics:
-            #   - BLEU score
-            #   - NLL
-            #   - Perplexity
-            #   - Edit Similarity
+            #perplexity
+            lm_logits = self.generator(context_token, return_dict=True).logits
+            shift_logits = lm_logits[..., :-1, :].contiguous()
+            shift_labels = context_token[..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            ppl = torch.exp(loss / len(context_token[0]))
+            # classifier accuracy
+            dis_inp = torch.cat((real_data_token, generated_data_token))
+            dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0
+            y_pred = self.discriminator(self.prepare_d_inp(dis_inp))
+            y_pred = torch.round(torch.sigmoid(y_pred)).to('cpu').numpy()
+            accuracy = accuracy_score(dis_y, y_pred, normalize=True)
 
-
-            # discriminator metrics
-            #   - accuracy
-
-            sample = self.dataset.get_random_real_sample(1, self.sequence_length)
-            x = sample[:, 0:self.config.start_sequence_len]
-            x = x.to(self.device)
-            reference = self.tokenizer.decode(sample[0].numpy(), skip_special_tokens=False)
-            output = self.generator.sample(x, self.sequence_length, 1)
-            predicition = self.tokenizer.decode(sample[0].numpy(), skip_special_tokens=False)
-            euclidian, cos_sim, levenstein, bleu = self.metrics.get_similarity(predicition, reference)
-            self.logger.log(
-                {'euclidian': euclidian, 'cosisinus_sim': cos_sim, 'levenstein_dis': levenstein, 'blue': bleu})
 
         self.generator.train()
+        self.discriminator.train()
+        return np.mean(bleu), np.mean(levenstein), ppl, accuracy
 
     def prepare_d_inp(self, inp):
         return f.one_hot(inp, self.config.vocab_size).float()
@@ -332,11 +335,6 @@ class Trainer:
         N = self.nadv_steps
         return beta_max ** (i / N)
 
-    def get_metrics(self, gen_file, test_file):
-        for i in range(2, 6):
-            bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name=f"blue-{i}")
-            self.logger.log({f"bleu-{i}": bleu.get_bleu()})
-
     def calculate_gradient_penalty(self, real_data, fake_data, LAMBDA=10):
         """
         Calculates the gradient penalty loss for WGAN GP
@@ -348,9 +346,6 @@ class Trainer:
         alpha = torch.rand([real_data.shape[0], 1, 1], device=self.device)
         alpha = alpha.expand(real_data.size())
 
-        # Get random interpolation between real and fake data
-        # a = 0.1 r = 6580 f = 9456
-        # 0.1 * 6580 + ((1 - 0.1) * 9456)
         interpolates = alpha * real_data + ((1 - alpha) * fake_data)
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
 
