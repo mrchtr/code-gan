@@ -8,12 +8,10 @@ import git
 import os
 from tqdm import tqdm
 
-from config import init_config
 from utils.FileUtils import create_dir_if_not_exists
 from utils.Preprocessor import preprocess
 
-config = init_config()
-debug = config.debug
+debug = True
 train_name = "./data/100k_train"
 eval_name = "./data/50k_eval"
 
