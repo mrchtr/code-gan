@@ -45,6 +45,9 @@ def init_config():
     # generator model
     config.generator = "GPTCode"  # LSTM,  Transformer or GPTCode
 
+    #pretraining generator
+    config.pretrain_generator = True
+
     # --- used for Transformer XL
     config.ninp = 768  # default: 768
     config.nhead = 12

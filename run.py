@@ -1,4 +1,5 @@
 from numpy import load
+from transformers import GPT2Tokenizer
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -6,6 +7,7 @@ from models.discriminator.Discriminator import CNNDiscriminator, CodeBertDiscrim
 from models.generator.Generator import GeneratorLSTM
 
 from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
+from train.Pretrainer import Pretrainer
 from train.Trainer import Trainer
 from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
 import os
@@ -50,10 +52,25 @@ if __name__ == '__main__':
 
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
+
+
+    if config.pretrain_generator is True:
+        bos_token = tokenizer.encode("<EOL>")
+        tokenizer_pretrain = GPT2Tokenizer(vocab_file="./code-tokenizer-vocab.json",
+                                           merges_file="./code-tokenizer-merges.txt",
+                                           bos_token=bos_token, eos_token=bos_token)
+        pretrain = Pretrainer('GPT2', tokenizer_pretrain, config)
+        pretrain.train()
+
     config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
     train, eval = load_datasets(config, tokenizer)
+    context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=11, batch_size=1)
+    print(f"Context: {ground_truth[0][:-1]}")
+    print(f"Context: {context}")
+    print(f"Labels: {ground_truth[0][1:]}")
 
-    generator = PretrainedGPTGenerator(config)
+
+    generator = PretrainedGPTGenerator(config, pretrained_model="./gpt2-code-pretrained")
     if config.discriminator == "CNN":
         discriminator = RelGAN_D(config)
     else:

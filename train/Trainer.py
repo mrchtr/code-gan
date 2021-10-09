@@ -88,7 +88,7 @@ class Trainer:
         print("Validate generator initial state: ")
         self.eval_generator()
 
-        self._pretrain_generator()
+        #self._pretrain_generator() # todo clean up - do by pretrainer class
         self._adversarial_training()
 
         # final evaluation
@@ -253,10 +253,10 @@ class Trainer:
             generated_data_str = self.tokenizer.decode_batch(generated_data_token.to('cpu').numpy(), skip_special_tokens=False)
             real_data_str = self.tokenizer.decode_batch(real_data_token.to('cpu').numpy(), skip_special_tokens=False)
 
-
-
             # bleu & levenstein
-            for generated, real in generated_data_str, real_data_str:
+            for i in range(0, len(generated_data_str)):
+                generated = generated_data_str[i]
+                real = real_data_str[i]
                 bleu.append(get_bleu(generated, real))
                 levenstein.append(jellyfish.levenshtein_distance(generated, real))
 
