@@ -203,6 +203,7 @@ class Trainer:
 
             self.generator.zero_grad()
             loss_g.backward(retain_graph=False)
+            torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
             optimizer.step()
             losses.append(loss_g.item())
 
@@ -221,6 +222,7 @@ class Trainer:
 
             self.discriminator.zero_grad()
             loss_d.backward(retain_graph=False)
+            torch.nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.config.clip_norm)
             optimizer.step()
             losses.append(loss_d.item())
 

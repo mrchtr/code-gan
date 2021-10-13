@@ -1,3 +1,5 @@
+import argparse
+
 from numpy import load
 from transformers import GPT2Tokenizer
 
@@ -36,12 +38,32 @@ def load_datasets(config, tokenizer):
     eval = TextDataset(inp=eval_data, block_size=config.block_size)
     return train, eval
 
+def pretrain():
+    tokenizer_pretrain = GPT2Tokenizer(vocab_file="./code-tokenizer-vocab.json",
+                                       merges_file="./code-tokenizer-merges.txt",
+                                       bos_token="<EOL>", eos_token="<EOL>")
+    pretrain = Pretrainer('GPT2', tokenizer_pretrain, config)
+    pretrain.train()
+
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Main training programm controll')
+    parser.add_argument('-p', '--pretrain',
+                        action='store_true',
+                        dest='pretraining',
+                        )
+
+    args = parser.parse_args()
 
     config = init_config()
 
     if config.debug:
         os.environ["WANDB_MODE"] = "offline"
+
+    if args.pretraining:
+        print("Start pretraining generator ...")
+        pretrain()
+        exit()
 
     logger = init_wandb_logger(config)
 
@@ -55,12 +77,7 @@ if __name__ == '__main__':
 
 
     if config.pretrain_generator is True:
-        bos_token = tokenizer.encode("<EOL>")
-        tokenizer_pretrain = GPT2Tokenizer(vocab_file="./code-tokenizer-vocab.json",
-                                           merges_file="./code-tokenizer-merges.txt",
-                                           bos_token=bos_token, eos_token=bos_token)
-        pretrain = Pretrainer('GPT2', tokenizer_pretrain, config)
-        pretrain.train()
+        pretrain(tokenizer)
 
     config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
     train, eval = load_datasets(config, tokenizer)

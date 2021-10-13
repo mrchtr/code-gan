@@ -55,5 +55,5 @@ class Pretrainer:
         )
 
         trainer.train()
-        trainer.model_save()
+        trainer.save_model("./gpt2-code-pretrained")
 
