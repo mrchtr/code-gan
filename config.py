@@ -68,7 +68,7 @@ def init_config():
     config.generator_optimizer = "AdamW"
     config.discriminator_optimizer = "AdamW"
 
-    config.clip_norm
+    config.clip_norm = 2
 
     """
     size of the generated example sequences. 

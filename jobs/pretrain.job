@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --job-name=pretrain
+#SBATCH --partition=clara-job
+#SBATCH --time=00:48:00
+
+module load Python
+
+cd /work/users/mi144quky/code-gan
+mkdir venv
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+srun python -u run.py -p

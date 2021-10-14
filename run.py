@@ -60,10 +60,6 @@ if __name__ == '__main__':
     if config.debug:
         os.environ["WANDB_MODE"] = "offline"
 
-    if args.pretraining:
-        print("Start pretraining generator ...")
-        pretrain()
-        exit()
 
     logger = init_wandb_logger(config)
 
@@ -75,6 +71,10 @@ if __name__ == '__main__':
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
 
+    if args.pretraining:
+        print("Start pretraining generator ...")
+        pretrain()
+        exit()
 
     if config.pretrain_generator is True:
         pretrain(tokenizer)
