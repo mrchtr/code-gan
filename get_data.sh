@@ -4,3 +4,14 @@ wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download
 
 mv out_eval.txt ./data/dataset/out_eval.txt
 mv out_train.txt ./data/dataset/out_train.txt
+
+mkdir data/dataset/tokenizer
+cp ./data/dataset/out_eval.txt ./data/dataset/tokenizer/out_eval.txt
+mkdir ./data/dataset/tokenizer/splitted
+split -b 1M ./data/dataset/tokenizer/out_test.txt ./data/dataset/tokenizer/splitted/file
+mv ./data/dataset/tokenizer/splitted/fileaa ./data/dataset/tokenizer/file.txt
+rm -rf  ./data/dataset/tokenizer/splitted
+
+
+split -b 1M -d  ./data/dataset/tokenizer/out_eval.txt part
+
