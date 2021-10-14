@@ -68,7 +68,7 @@ class CodeTokenizerResolver:
         self.config = config
         self.path = path
         self.min_frequency = min_frequency
-        self.tokenizer = self.train_if_not_available(path, pretrained, config.data_dir, min_frequency)
+        self.tokenizer = self.train_if_not_available(path, pretrained, config.tokenizer_data, min_frequency)
 
     def get(self):
         return self.tokenizer
