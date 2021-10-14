@@ -10,7 +10,7 @@ def init_config():
     To run in production mode, please the debug to false.
     Furthermore, no metrics will be log into wandb if debug is true.  
     """
-    config.debug = True
+    config.debug = False
 
     # project name in wandb
     config.project_name = "code-gan"
@@ -22,8 +22,8 @@ def init_config():
     config.benchmark_dataset = False  # True or False
     # config.training_data = "./demo_code/out_train.txt"
     config.data_dir = "./data/dataset"
-    config.training_data = "./demo_code/out_train.txt"
-    config.validation_data = "./demo_code/out_test.txt"
+    config.training_data = "./data/dataset/out_train.txt"
+    config.validation_data = "./data/dataset/out_test.txt"
 
     # tokenizer configuration
     config.vocab_size = 32000
