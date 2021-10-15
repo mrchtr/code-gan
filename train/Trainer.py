@@ -165,15 +165,14 @@ class Trainer:
             loss_d = self.adv_train_discriminator(x, real_data, discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
-            bleu, es, ppl, accuracy  = self.eval_generator()
+            bleu, es, ppl  = self.eval_generator()
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
                              "generator/edit_similarity": es,
-                             "generator/ppl": ppl,
-                             "discriminator/accuracy": accuracy})
+                             "generator/ppl": ppl})
 
             if i % 100 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
@@ -276,16 +275,16 @@ class Trainer:
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
             ppl = torch.exp(loss / len(context_token[0]))
             # classifier accuracy
-            dis_inp = torch.cat((real_data_token, generated_data_token))
-            dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0
-            y_pred = self.discriminator(self.prepare_d_inp(dis_inp))
-            y_pred = torch.round(torch.sigmoid(y_pred)).to('cpu').numpy()
-            accuracy = accuracy_score(dis_y, y_pred, normalize=True)
+            #dis_inp = torch.cat((real_data_token, generated_data_token))
+            #dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0
+            #y_pred = self.discriminator(self.prepare_d_inp(dis_inp))
+            #y_pred = torch.round(torch.sigmoid(y_pred)).to('cpu').numpy()
+            #accuracy = accuracy_score(dis_y, y_pred, normalize=True)
 
 
         self.generator.train()
         self.discriminator.train()
-        return np.mean(bleu), np.mean(levenstein), ppl, accuracy
+        return np.mean(bleu), np.mean(levenstein), ppl
 
     def prepare_d_inp(self, inp):
         return f.one_hot(inp, self.config.vocab_size).float()

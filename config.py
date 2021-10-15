@@ -23,11 +23,10 @@ def init_config():
     # config.training_data = "./demo_code/out_train.txt"
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.tokenizer_data = "./data/dataset/tokenizer"
     config.validation_data = "./data/dataset/out_test.txt"
 
     # tokenizer configuration
-    config.vocab_size = 32000
+    config.vocab_size = 52000
     config.special_tokens = [
         '<BOF>',
         '<EOF>',
