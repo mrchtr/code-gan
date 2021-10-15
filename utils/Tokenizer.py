@@ -87,6 +87,8 @@ class CodeTokenizerResolver:
                             special_tokens=self.config.special_tokens)
 
             tokenizer.save_model(path, tokenizer_name)
+        else:
+            print("Using pretrained tokenizer ...")
 
         return self.load_pretrained(path, tokenizer_name)
 

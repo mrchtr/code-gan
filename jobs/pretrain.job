@@ -4,13 +4,29 @@
 #SBATCH --job-name=pretrain
 #SBATCH --partition=clara-job
 #SBATCH --time=00:48:00
-#SBATCH --gres=gpu:v100:4
-#SBATCH --mem-per-cpu=12G
+#SBATCH --gres=gpu:v100:1
+#SBATCH --mem-per-cpu=4G
 #SBATCH --output=/work/users/mi144quky/Output/Pretraining_%j.out
 
+module load CUDA
 module load Python
 
-cd /work/users/mi144quky/code-gan
+
+cd /work/users/mi144quky
+
+# clone repository and checkout newest version
+git clone https://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@github.com/mrchtr/code-gan.git
+cd code-gan
+git checkout clean-up
+
+# getting data
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1tjz92ShC3gwklJwNMr7nGJEXF6TvCS5X' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1tjz92ShC3gwklJwNMr7nGJEXF6TvCS5X" -O out_eval.txt && rm -rf /tmp/cookies.txt
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=13x-PzszXLCuf3-9132RjLVa5HGKA4eWB' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=13x-PzszXLCuf3-9132RjLVa5HGKA4eWB" -O out_train.txt && rm -rf /tmp/cookies.txt
+
+mv out_eval.txt ./data/dataset/out_eval.txt
+mv out_train.txt ./data/dataset/out_train.txt
+
+# prepare venv and install dependencies
 mkdir venv
 python -m venv venv
 source venv/bin/activate
@@ -20,4 +36,5 @@ pip install -r requirements.txt
 pip install wandb
 wandb login 61c2320b5e0b3ff1e63f99f0f87409a917645546
 
+# run training
 srun python -u run.py
