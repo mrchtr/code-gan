@@ -116,7 +116,8 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         configuration = GPT2Config(
             vocab_size=config.vocab_size,
             bos_token_id=bos_token,
-            eos_token_id=bos_token
+            eos_token_id=bos_token,
+            pad_token_id=bos_token
         )
         self.transformer = GPT2Model(configuration)
         #self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)

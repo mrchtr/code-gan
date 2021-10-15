@@ -144,8 +144,11 @@ class Trainer:
             print(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
 
+            if i % 100 == 0:
+                self.generate_sample()
+                torch.save(self.generator.state_dict(), 'generator.pth')
+
         print(f"Mean losses: {np.mean(losses)}")
-        torch.save(self.generator.state_dict(), 'generator.pth')
 
     def _adversarial_training(self):
         print(f"Start adversarial training. Run for {self.nadv_steps} steps ...")
