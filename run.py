@@ -68,6 +68,7 @@ if __name__ == '__main__':
     print(f"Generator: {config.generator}")
     print(f"Discriminator: {config.discriminator}")
     print(f"GPU available : {config.device}")
+    print(f"Debugging on : {config.debug}")
     print(60 * "-")
 
     # initialize tokenizer
