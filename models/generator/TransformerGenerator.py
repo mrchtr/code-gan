@@ -118,8 +118,8 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             bos_token_id=bos_token,
             eos_token_id=bos_token
         )
-        #self.transformer = GPT2Model(configuration)
-        self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
+        self.transformer = GPT2Model(configuration)
+        #self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
         self.config = self.transformer.config
         self.config.eos_token_id = self._config.eos_token_id
         self.transformer.resize_token_embeddings(self.ntoken)
@@ -173,7 +173,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
 
-        return self.generate(context, max_length=self._config.sequence_length, num_samples=1, num_beams=5, eos_token_id=self._config.eos_token_id,)
+        return self.generate(context, max_length=self._config.sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id,)
 
 
 

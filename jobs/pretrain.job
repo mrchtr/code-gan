@@ -20,4 +20,4 @@ pip install -r requirements.txt
 pip install wandb
 wandb login 61c2320b5e0b3ff1e63f99f0f87409a917645546
 
-srun python -u run.py -p
+srun python -u run.py

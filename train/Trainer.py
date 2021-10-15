@@ -64,7 +64,7 @@ class Trainer:
         self.generator = self.generator.to(self.device)
         self.discriminator = self.discriminator.to(self.device)
 
-        self.metrics = Metrics(config.sequence_length)
+        #self.metrics = Metrics(config.sequence_length)
         self.logger = logger
 
     @staticmethod
@@ -88,7 +88,7 @@ class Trainer:
         print("Validate generator initial state: ")
         self.eval_generator()
 
-        #self._pretrain_generator() # todo clean up - do by pretrainer class
+        self._pretrain_generator()
         self._adversarial_training()
 
         # final evaluation
@@ -102,11 +102,10 @@ class Trainer:
                 'cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            print(f"Given:        {self.tokenizer.decode(context[0].numpy())}")
+            print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy())}")
             print(f"Proposed:     {sample_str}")
-            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].numpy())}")
-            text_table.add_row(sample_str)
-            self.logger.log({"samples": text_table})
+            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy())}")
+
         except:
             print(f"Error while generating sample")
 
@@ -115,6 +114,7 @@ class Trainer:
 
         if self.config.generator == "GPTCode":
             criterion = nn.CrossEntropyLoss()
+            #criterion = nn.NLLLoss()  # softmax already applied inside the model
         else:
             criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
@@ -138,8 +138,10 @@ class Trainer:
 
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
             optimizer.step()
             losses.append(loss.item())
+            print(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
 
         print(f"Mean losses: {np.mean(losses)}")
@@ -160,7 +162,7 @@ class Trainer:
             loss_d = self.adv_train_discriminator(x, real_data, discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
-            bleu, es, ppl, accuracy   = self.eval_generator()
+            bleu, es, ppl, accuracy  = self.eval_generator()
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 

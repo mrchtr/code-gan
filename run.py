@@ -63,21 +63,20 @@ if __name__ == '__main__':
 
     logger = init_wandb_logger(config)
 
+    print(60 * "-")
     print("Start Code-GAN training with the following configuration: ")
     print(f"Generator: {config.generator}")
     print(f"Discriminator: {config.discriminator}")
+    print(f"GPU available : {config.device}")
     print(60 * "-")
 
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
 
-    if args.pretraining:
-        print("Start pretraining generator ...")
-        pretrain()
-        exit()
-
-    if config.pretrain_generator is True:
-        pretrain(tokenizer)
+    #if args.pretraining:
+    #    print("Start pretraining generator ...")
+    #    pretrain()
+    #    exit()
 
     config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
     train, eval = load_datasets(config, tokenizer)
@@ -87,11 +86,12 @@ if __name__ == '__main__':
     print(f"Labels: {ground_truth[0][1:]}")
 
 
-    generator = PretrainedGPTGenerator(config, pretrained_model="./gpt2-code-pretrained")
+    generator = PretrainedGPTGenerator(config, pretrained_model="./gpt2-code-pretrained", bos_token=config.eos_token_id)
     if config.discriminator == "CNN":
         discriminator = RelGAN_D(config)
     else:
-        discriminator = CodeBertDiscriminator()
+        #discriminator = CodeBertDiscriminator()
+        None
 
     trainer = Trainer(generator, discriminator, train, tokenizer, config, logger=logger, dataset_eval=eval)
     trainer.train()

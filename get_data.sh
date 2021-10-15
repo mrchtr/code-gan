@@ -12,6 +12,3 @@ split -b 1M ./data/dataset/tokenizer/out_test.txt ./data/dataset/tokenizer/split
 mv ./data/dataset/tokenizer/splitted/fileaa ./data/dataset/tokenizer/file.txt
 rm -rf  ./data/dataset/tokenizer/splitted
 
-
-split -b 1M -d  ./data/dataset/tokenizer/out_eval.txt part
-
