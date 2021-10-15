@@ -10,3 +10,4 @@ aiohttp
 jellyfish
 scikit-learn
 GitPython
+tensorflow
