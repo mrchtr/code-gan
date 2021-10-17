@@ -11,7 +11,7 @@ from models.generator.Generator import GeneratorLSTM
 from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
 from train.Pretrainer import Pretrainer
 from train.Trainer import Trainer
-from utils.Tokenizer import CodeTokenizerResolver, SentencepieceResolver
+from utils.Tokenizer import CodeTokenizerResolver
 import os
 from tqdm import tqdm
 import wandb
