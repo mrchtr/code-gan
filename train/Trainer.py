@@ -141,7 +141,7 @@ class Trainer:
             torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
             optimizer.step()
             losses.append(loss.item())
-            print(loss.item())
+            #print(loss.item())
             self.logger.log({f"pretraining/loss": loss.item()})
 
             if i % 100 == 0:
