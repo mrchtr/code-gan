@@ -81,10 +81,9 @@ if __name__ == '__main__':
 
     config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
     train, eval = load_datasets(config, tokenizer)
-    context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=11, batch_size=1)
-    print(f"Context: {ground_truth[0][:-1]}")
+    context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=12, batch_size=1)
     print(f"Context: {context}")
-    print(f"Labels: {ground_truth[0][1:]}")
+    print(f"Ground Truth: {ground_truth[0]}")
 
 
     generator = PretrainedGPTGenerator(config, pretrained_model="./gpt2-code-pretrained", bos_token=config.eos_token_id)

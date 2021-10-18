@@ -111,7 +111,7 @@ class RelGAN_D(CNNDiscriminator):
         )
 
         self.embed_dim = config.discriminator_embedding_dim
-        self.max_seq_len = config.sequence_length
+        self.max_seq_len = (config.sequence_length - config.start_sequence_len)
         self.feature_dim = sum(num_filters)
         self.emb_dim_single = int(self.embed_dim / num_rep)
 

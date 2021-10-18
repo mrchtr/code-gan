@@ -82,6 +82,7 @@ class Trainer:
         """
         Main training loop. Including pretraining and adverserial training
         """
+        global global_log_step
         # pretrained model perplexity
         self.generate_sample()
 
@@ -89,6 +90,7 @@ class Trainer:
         self.eval_generator()
 
         self._pretrain_generator()
+
         self._adversarial_training()
 
         # final evaluation
@@ -101,8 +103,8 @@ class Trainer:
             context, ground_truth = self._generate_context()
             sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1).to(
                 'cpu')  # array of sample tokens
-
-            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
+            sample = sample[:, self.config.start_sequence_len:self.config.sequence_length]
+            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist(), skip_special_tokens=False)
             print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(f"Proposed:     {sample_str}")
             print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy(), skip_special_tokens=False)}")
@@ -143,7 +145,7 @@ class Trainer:
             optimizer.step()
             losses.append(loss.item())
             #print(loss.item())
-            self.logger.log({f"pretraining/loss": loss.item()})
+            self.logger.log({f"pretraining/loss": loss.item(), "iteration" : i})
 
             if i % 100 == 0:
                 self.generate_sample()
@@ -160,7 +162,6 @@ class Trainer:
 
         for i in tqdm(range(self.nadv_steps)):
             # context should be of shape (batch_size, block_size)
-
             loss_g = self.adv_train_generator(generator_optimizer)
             loss_d = self.adv_train_discriminator(discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
@@ -172,10 +173,15 @@ class Trainer:
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
                              "generator/edit_similarity": es,
-                             "generator/ppl": ppl})
+                             "generator/ppl": ppl,
+                             "iteration": i},
+                            custom_step=global_log_step)
 
             if i % 100 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
+                artifact = wandb.Artifact('model', type='model')
+                artifact.add_file('generator.pth')
+                self.logger.log_artifact(artifact)
                 self.generate_sample()
 
 
@@ -194,16 +200,14 @@ class Trainer:
                                                                                       self.config.sequence_length)
             return context.to(self.device), ground_truth.to(self.device)
 
-    def adv_train_generator(self, x, real_data, optimizer):
+    # todo check if we can combine train dis and gen to one method
+    def adv_train_generator(self, optimizer):
         x, real_data = self._generate_context()
         losses = []
         for i in range(self.g_steps):
-            # todo: just pass generated sample to generator
-            # - edit __generate_context()
-            # - cut off generated data --> generated_data[start_len:-1] .. somethink like that
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
-
+            generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
 
@@ -221,9 +225,9 @@ class Trainer:
         x, real_data = self._generate_context()
         losses = []
         for i in range(self.d_steps):
-            # todo just pass generated sample to generator
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
+            generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
 
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
