@@ -87,7 +87,7 @@ def init_config():
     config.lr_adv_d = 1e-4  # 1e-4
     config.nadv_steps = 10000
     config.g_steps = 1
-    config.d_steps = 5
+    config.d_steps = 1
     config.temperature = 50
     config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
