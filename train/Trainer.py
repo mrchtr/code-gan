@@ -174,8 +174,7 @@ class Trainer:
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
                              "generator/edit_similarity": es,
                              "generator/ppl": ppl,
-                             "iteration": i},
-                            custom_step=global_log_step)
+                             "iteration": i})
 
             if i % 100 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
@@ -213,7 +212,7 @@ class Trainer:
 
             loss_g, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
 
-            self.generator.zero_grad()
+            optimizer.zero_grad()
             loss_g.backward(retain_graph=False)
             torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
             optimizer.step()
@@ -234,7 +233,7 @@ class Trainer:
             gradient_penalty = self.calculate_gradient_penalty(real_data, generated_data)
             _, loss_d = self.get_losses(discriminator_real_out, discriminator_fake_out, gradient_penalty)
 
-            self.discriminator.zero_grad()
+            optimizer.zero_grad()
             loss_d.backward(retain_graph=False)
             torch.nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.config.clip_norm)
             optimizer.step()
