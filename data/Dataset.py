@@ -40,7 +40,7 @@ class TextDataset(Dataset):
             sample = self.__get_random_sample(seq_len)
             context.append(sample[0:start_len])
             ground_truth.append(sample)
-
+            # todo ground_turth just the second half of item --> ground_truth = sample[start_len:-1]
         return torch.tensor(context), torch.tensor(ground_truth)
 
     def get_random_real_sample(self, batch_size, seq_len):

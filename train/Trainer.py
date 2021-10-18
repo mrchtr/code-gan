@@ -160,10 +160,9 @@ class Trainer:
 
         for i in tqdm(range(self.nadv_steps)):
             # context should be of shape (batch_size, block_size)
-            x, real_data = self._generate_context()
 
-            loss_g = self.adv_train_generator(x, real_data, generator_optimizer)
-            loss_d = self.adv_train_discriminator(x, real_data, discriminator_optimizer)
+            loss_g = self.adv_train_generator(generator_optimizer)
+            loss_d = self.adv_train_discriminator(discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
             bleu, es, ppl  = self.eval_generator()
@@ -196,8 +195,12 @@ class Trainer:
             return context.to(self.device), ground_truth.to(self.device)
 
     def adv_train_generator(self, x, real_data, optimizer):
+        x, real_data = self._generate_context()
         losses = []
         for i in range(self.g_steps):
+            # todo: just pass generated sample to generator
+            # - edit __generate_context()
+            # - cut off generated data --> generated_data[start_len:-1] .. somethink like that
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
 
@@ -214,9 +217,11 @@ class Trainer:
 
         return np.mean(losses)
 
-    def adv_train_discriminator(self, x, real_data, optimizer):
+    def adv_train_discriminator(self, optimizer):
+        x, real_data = self._generate_context()
         losses = []
         for i in range(self.d_steps):
+            # todo just pass generated sample to generator
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
 
