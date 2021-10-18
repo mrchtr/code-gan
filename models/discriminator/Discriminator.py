@@ -101,7 +101,7 @@ class CNNDiscriminator(Discriminator):
         return logits
 
 class RelGAN_D(CNNDiscriminator):
-    def __init__(self,config, num_filters=[300, 300, 300, 300], filter_sizes=[2, 3, 4, 5], num_rep=1, dropout=0.5):
+    def __init__(self,config, num_filters=[300, 300, 300, 300], filter_sizes=[2, 3, 4, 5], num_rep=1, dropout=0.25):
         super(RelGAN_D, self).__init__(
             config,
             filter_sizes=[2, 3, 4, 5],
