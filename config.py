@@ -89,7 +89,7 @@ def init_config():
     config.g_steps = 5
     config.d_steps = 1
     config.temperature = 50
-    config.loss_type = "wgan" #standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = True
     return config
