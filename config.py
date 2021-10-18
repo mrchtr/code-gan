@@ -39,7 +39,7 @@ def init_config():
     ]
 
 
-    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 256  # in case of LSTM / Memory Unit should be 1
 
 
     # generator model
@@ -73,13 +73,13 @@ def init_config():
     """
     size of the generated example sequences. 
     """
-    config.sequence_length = 90 #75
+    config.sequence_length = 40 #75
 
     """
     size of the given context for the sequence generation
     """
-    config.start_sequence_len = 64 #25
-    config.batch_size = 8
+    config.start_sequence_len = 20 #25
+    config.batch_size = 32
     # config.pretraining_epochs = 0
     config.pretraining_steps = 100000
     config.lr_pretrain = 5e-5
@@ -89,7 +89,7 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
-    config.loss_type = "rsgan" #standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = True
     return config

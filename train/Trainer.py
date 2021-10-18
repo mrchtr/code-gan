@@ -95,17 +95,18 @@ class Trainer:
         self.eval_generator(validation_set=True)
 
     def generate_sample(self):
-        print("Testing sample generation of random initialized generator: ")
+        print(60 * "-")
+        print("Generates Test Sample")
         try:
             context, ground_truth = self._generate_context()
             sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1).to(
                 'cpu')  # array of sample tokens
 
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist())
-            print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy())}")
+            print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(f"Proposed:     {sample_str}")
-            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy())}")
-
+            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy(), skip_special_tokens=False)}")
+            print(60 * "-")
         except:
             print(f"Error while generating sample")
 
