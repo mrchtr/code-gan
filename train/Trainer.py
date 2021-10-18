@@ -116,8 +116,8 @@ class Trainer:
         print("Start pretraining of generator ...")
 
         if self.config.generator == "GPTCode":
-            criterion = nn.CrossEntropyLoss()
-            #criterion = nn.NLLLoss()  # softmax already applied inside the model
+            #criterion = nn.CrossEntropyLoss()
+            criterion = nn.NLLLoss()  # softmax already applied inside the model
         else:
             criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
