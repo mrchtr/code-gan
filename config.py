@@ -39,7 +39,7 @@ def init_config():
     ]
 
 
-    config.block_size = 256  # in case of LSTM / Memory Unit should be 1
+    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
 
 
     # generator model
