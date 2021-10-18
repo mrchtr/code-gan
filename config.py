@@ -79,17 +79,17 @@ def init_config():
     size of the given context for the sequence generation
     """
     config.start_sequence_len = 20 #25
-    config.batch_size = 32
+    config.batch_size = 128
     # config.pretraining_epochs = 0
     config.pretraining_steps = 1
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 1000000
-    config.g_steps = 1
+    config.nadv_steps = 100000
+    config.g_steps = 5
     config.d_steps = 1
     config.temperature = 50
-    config.loss_type = "rsgan" #standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = True
     return config
