@@ -206,7 +206,7 @@ class Trainer:
         for i in range(self.g_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
-            generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
+            #generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
 
@@ -226,7 +226,7 @@ class Trainer:
         for i in range(self.d_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
-            generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
+            #generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
 
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
