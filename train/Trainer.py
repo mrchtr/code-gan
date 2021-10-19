@@ -116,8 +116,8 @@ class Trainer:
         print("Start pretraining of generator ...")
 
         if self.config.generator == "GPTCode":
-            #criterion = nn.CrossEntropyLoss()
-            criterion = nn.NLLLoss()  # softmax already applied inside the model
+            criterion = nn.CrossEntropyLoss()
+            #criterion = nn.NLLLoss()  # softmax already applied inside the model
         else:
             criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
@@ -133,9 +133,9 @@ class Trainer:
             x = x.to(self.device)
             y = y.to(self.device)
 
-            pred, hidden, next_token = self.generator(x, hidden)
+            logits = self.generator(x, hidden, return_dict=True).logits
 
-            shift_logits = pred[..., :-1, :].contiguous()  # remove the last logits in every batch
+            shift_logits = logits[..., :-1, :].contiguous()  # remove the last logits in every batch
             shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
             loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
@@ -361,7 +361,6 @@ class Trainer:
         fake_data = self.prepare_d_inp(fake_data)
         alpha = torch.rand([real_data.shape[0], 1, 1], device=self.device)
         alpha = alpha.expand(real_data.size())
-
         interpolates = alpha * real_data + ((1 - alpha) * fake_data)
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
 

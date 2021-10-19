@@ -155,26 +155,24 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         """
         out = self.transformer(input_ids, labels)  # encoder
         logits = self.decoder(out.last_hidden_state)  # linear layer
-        gumbel_t = self.add_gumbel(logits, self.device)  # gumbel_t layer
-        prediction = f.softmax(gumbel_t * self.temperature, dim=1)  # prediction
-
-        next_token = torch.argmax(gumbel_t, dim=1).detach()  # next token - not part of autograde graph
 
         # needed for sequence generation, not part of the autograde graph
         # softmax operation will be applied inside the huggingface generation module
-        generation_logits = torch.mul(logits, self.temperature).detach()
-
         if return_dict:
+            generation_logits = torch.mul(logits, self.temperature)
             return CausalLMOutputWithCrossAttentions(
                 logits=generation_logits
             )
         else:
+            gumbel_t = self.add_gumbel(logits, self.device)  # gumbel_t layer
+            prediction = f.softmax(gumbel_t * self.temperature, dim=1)  # prediction
+            next_token = torch.argmax(gumbel_t, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
-
-        return self.generate(context, max_length=self._config.sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id,)
+        # todo add padding to not endforce the fixed length of sample
+        return self.generate(context, max_length=self._config.sequence_length, min_length=self._config.sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id,)
 
 
 

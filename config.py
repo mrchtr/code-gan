@@ -10,7 +10,7 @@ def init_config():
     To run in production mode, please the debug to false.
     Furthermore, no metrics will be log into wandb if debug is true.  
     """
-    config.debug = True
+    config.debug = False
 
     # project name in wandb
     config.project_name = "code-gan"
@@ -79,13 +79,13 @@ def init_config():
     size of the given context for the sequence generation
     """
     config.start_sequence_len = 20 #25
-    config.batch_size = 16
+    config.batch_size = 2
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 500
+    config.pretraining_steps = 1
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 10000
+    config.nadv_steps = 100000
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
