@@ -30,12 +30,12 @@ def tokenize_files(source, tokenizer):
             tokenized_data += tokenizer.encode(content[i:i + mini_batch]).ids
     return tokenized_data
 
-def load_datasets(config, tokenizer):
+def load_datasets(config, tokenizer, eos_token_id):
     training_data = tokenize_files(config.training_data, tokenizer)
-    train = TextDataset(inp=training_data, block_size=config.block_size)
+    train = TextDataset(inp=training_data, block_size=config.block_size, eos_token_id=eos_token_id)
 
     eval_data = tokenize_files(config.validation_data, tokenizer)
-    eval = TextDataset(inp=eval_data, block_size=config.block_size)
+    eval = TextDataset(inp=eval_data, block_size=config.block_size, eos_token_id=eos_token_id)
     return train, eval
 
 def pretrain():
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     #    exit()
 
     config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
-    train, eval = load_datasets(config, tokenizer)
+    train, eval = load_datasets(config, tokenizer, config.eos_token_id)
     context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=12, batch_size=1)
     print(f"Context: {context}")
     print(f"Ground Truth: {ground_truth[0]}")

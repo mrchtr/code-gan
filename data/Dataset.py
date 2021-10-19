@@ -12,14 +12,16 @@ class TextDataset(Dataset):
     Dataset for training the gan. Holding tokenized text.
     """
 
-    def __init__(self, block_size, inp):
+    def __init__(self, block_size, inp, eos_token_id=2):
         """
         :param block_size: size of sequences
         :param inp: input tokens as vector representation
         """
 
+        self.eos_token_id = eos_token_id
         self.block_size = block_size
         self.data = inp
+
 
     def __len__(self):
         return len(self.data) - self.block_size
@@ -33,16 +35,20 @@ class TextDataset(Dataset):
         )
 
     def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len):
+        ground_truth_len = seq_len - start_len
         context = []
         ground_truth = []
-
         for _ in range(batch_size):
-            #sample = self.__get_random_sample(seq_len)
-            #context.append(sample[0:start_len])
-            #ground_truth.append(sample[start_len:seq_len])
-            sample = self.__get_random_sample(seq_len)
-            context.append(sample[0:start_len])
-            ground_truth.append(sample)
+            sample = self.__get_random_sample(seq_len)  # full max len sample (context, ground_truth)
+            context.append(sample[0:start_len])  # build context
+
+            _ground_truth = sample[start_len:seq_len]
+            if self.eos_token_id in _ground_truth:
+                # get index of <EOL> token
+                index = _ground_truth.index(self.eos_token_id)
+                # slicing after + fill of with <EOL> tokens
+                _ground_truth = _ground_truth[0:index] + [self.eos_token_id] * (ground_truth_len - index)
+            ground_truth.append(_ground_truth)
         return torch.tensor(context), torch.tensor(ground_truth)
 
     def get_random_real_sample(self, batch_size, seq_len):

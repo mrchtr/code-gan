@@ -7,6 +7,7 @@ from abc import ABC
 import torch
 import torch.nn.functional as f
 import torch.nn as nn
+from torch.autograd import Variable
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import numpy as np
 from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead, TransfoXLConfig, GPT2Config
@@ -172,7 +173,19 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
         # todo add padding to not endforce the fixed length of sample
-        return self.generate(context, max_length=self._config.sequence_length, min_length=self._config.sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id,)
+        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id)
+
+        # pad first seq to desired length
+        # pad all seqs to desired length
+
+        # this is what you want:
+        out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.eos_token_id)
+        for i, tensor in enumerate(sample):
+            length = tensor.size(0)
+            # use index notation to prevent duplicate references to the tensor
+            out_tensor[i, :length, ...] = tensor
+        out_tensor = out_tensor.to(self._config.device)
+        return out_tensor
 
 
 

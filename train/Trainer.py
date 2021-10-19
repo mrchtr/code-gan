@@ -259,7 +259,7 @@ class Trainer:
         with torch.no_grad():
 
             # get context
-            context_token, real_data_token = self._generate_context()
+            context_token, real_data_token = self._generate_context(validation_set=True)
 
             # create sample
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
