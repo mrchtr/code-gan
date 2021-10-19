@@ -48,6 +48,7 @@ class TextDataset(Dataset):
                 index = _ground_truth.index(self.eos_token_id)
                 # slicing after + fill of with <EOL> tokens
                 _ground_truth = _ground_truth[0:index] + [self.eos_token_id] * (ground_truth_len - index)
+            _ground_truth = sample[0:start_len] + _ground_truth
             ground_truth.append(_ground_truth)
         return torch.tensor(context), torch.tensor(ground_truth)
 
