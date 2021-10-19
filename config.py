@@ -81,7 +81,7 @@ def init_config():
     config.start_sequence_len = 20 #25
     config.batch_size = 64
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 5000
+    config.pretraining_steps = 1000
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
@@ -89,7 +89,7 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
-    config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
+    config.loss_type = "rsgan" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = False
     return config
