@@ -73,19 +73,19 @@ def init_config():
     """
     size of the generated example sequences. 
     """
-    config.sequence_length = 40 #75
+    config.sequence_length = 10 #75
 
     """
     size of the given context for the sequence generation
     """
-    config.start_sequence_len = 20 #25
-    config.batch_size = 64
+    config.start_sequence_len = 5 #25
+    config.batch_size = 256
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 20000
+    config.pretraining_steps = 1000
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 50000
+    config.nadv_steps = 2
     config.g_steps = 1
     config.d_steps = 1
     config.temperature = 50
