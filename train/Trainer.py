@@ -104,10 +104,10 @@ class Trainer:
             sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1).to(
                 'cpu')  # array of sample tokens
             sample = sample[:, self.config.start_sequence_len:self.config.sequence_length]
-            sample_str = self.tokenizer.decode(sample.numpy()[self.config.start_sequence_len:self.config.sequence_length].tolist(), skip_special_tokens=False)
+            sample_str = self.tokenizer.decode(sample.numpy()[0].tolist(), skip_special_tokens=False)
             print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(f"Proposed:     {sample_str}")
-            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0][self.config.start_sequence_len:self.config.sequence_length].to('cpu').numpy(), skip_special_tokens=False)}")
+            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(60 * "-")
         except:
             print(f"Error while generating sample")
