@@ -128,15 +128,15 @@ class Trainer:
         hidden = self.generator.init_state(self.batch_size)
         self.generator.train()
 
+
         for i in tqdm(range(self.config.pretraining_steps)):
             x, y = next(iterator)
             x = x.to(self.device)
-            y = y.to(self.device)
 
             logits = self.generator(x, hidden, return_dict=True).logits
 
             shift_logits = logits[..., :-1, :].contiguous()  # remove the last logits in every batch
-            shift_labels = y[..., 1:].contiguous()  # removing the first tokens in each label sequence
+            shift_labels = x[..., 1:].contiguous()  # removing the first tokens in each label sequence
             loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
             optimizer.zero_grad()
