@@ -92,4 +92,5 @@ def init_config():
     config.loss_type = "wgan" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = False
+    config.repetition_penalty = 1.2
     return config

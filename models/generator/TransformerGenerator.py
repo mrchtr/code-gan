@@ -172,7 +172,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
-        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id)
+        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, early_stopping=True, repetition_penalty=self._config.repetition_penalty)
 
         # pad first seq to desired length
         # pad all seqs to desired length
