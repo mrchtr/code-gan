@@ -72,12 +72,12 @@ if __name__ == '__main__':
     print(60 * "-")
 
     # initialize tokenizer
-    tokenizer = CodeTokenizerResolver(config=config).get()
-    config.vocab_size = tokenizer.get_vocab_size()
+    #tokenizer = CodeTokenizerResolver(config=config).get()
+
 
     # Load pretrained model and tokenizer
     tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>', bos_token='<s>', eos_token='</s>', pad_token='<pad>', unk_token='<|UNKNOWN|>', additional_special_tokens=config.special_tokens)
-
+    config.vocab_size = len(tokenizer)
     #if args.pretraining:
     #    print("Start pretraining generator ...")
     #    pretrain()
