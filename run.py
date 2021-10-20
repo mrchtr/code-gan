@@ -27,15 +27,15 @@ def tokenize_files(source, tokenizer):
         tokenized_data = []
         mini_batch = 500
         for i in tqdm(range(0, len(content), mini_batch)):
-            tokenized_data += tokenizer.encode(content[i:i + mini_batch])
+            tokenized_data += tokenizer.encode(content[i:i + mini_batch]).ids
     return tokenized_data
 
-def load_datasets(config, tokenizer, eos_token_id, pad_token_id):
+def load_datasets(config, tokenizer, eos_token_id):
     training_data = tokenize_files(config.training_data, tokenizer)
-    train = TextDataset(inp=training_data, block_size=config.block_size, eos_token_id=eos_token_id, pad_token_id=pad_token_id)
+    train = TextDataset(inp=training_data, block_size=config.block_size, eos_token_id=eos_token_id)
 
     eval_data = tokenize_files(config.validation_data, tokenizer)
-    eval = TextDataset(inp=eval_data, block_size=config.block_size, eos_token_id=eos_token_id, pad_token_id=pad_token_id)
+    eval = TextDataset(inp=eval_data, block_size=config.block_size, eos_token_id=eos_token_id)
     return train, eval
 
 def pretrain():
@@ -74,17 +74,13 @@ if __name__ == '__main__':
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
 
-    # Load pretrained model and tokenizer
-    tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>', bos_token='<s>', eos_token='</s>', pad_token='<pad>', unk_token='<|UNKNOWN|>', additional_special_tokens=config.special_tokens)
-
     #if args.pretraining:
     #    print("Start pretraining generator ...")
     #    pretrain()
     #    exit()
 
-    config.eos_token_id = tokenizer.encode("<EOL>")[0]
-    config.pad_token_id = tokenizer.encode("<PAD>")[0]
-    train, eval = load_datasets(config, tokenizer, config.eos_token_id, config.pad_token_id)
+    config.eos_token_id = tokenizer.encode("<EOL>").ids[0]
+    train, eval = load_datasets(config, tokenizer, config.eos_token_id)
     context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=12, batch_size=1)
     print(f"Context: {context}")
     print(f"Ground Truth: {ground_truth[0]}")

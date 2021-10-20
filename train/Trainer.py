@@ -265,8 +265,8 @@ class Trainer:
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
             # get string represenation
-            generated_data_str = self.tokenizer.batch_decode(generated_data_token.to('cpu').numpy(), skip_special_tokens=False)
-            real_data_str = self.tokenizer.batch_decode(real_data_token.to('cpu').numpy(), skip_special_tokens=False)
+            generated_data_str = self.tokenizer.decode_batch(generated_data_token.to('cpu').numpy(), skip_special_tokens=False)
+            real_data_str = self.tokenizer.decode_batch(real_data_token.to('cpu').numpy(), skip_special_tokens=False)
 
             # bleu & levenstein
             for i in range(0, len(generated_data_str)):
@@ -282,7 +282,7 @@ class Trainer:
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-            ppl = torch.exp(loss.mean())
+            ppl = torch.exp(loss / len(context_token[0]))
             # classifier accuracy
             #dis_inp = torch.cat((real_data_token, generated_data_token))
             #dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0

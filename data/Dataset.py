@@ -12,14 +12,13 @@ class TextDataset(Dataset):
     Dataset for training the gan. Holding tokenized text.
     """
 
-    def __init__(self, block_size, inp, eos_token_id=2, pad_token_id=None):
+    def __init__(self, block_size, inp, eos_token_id=2):
         """
         :param block_size: size of sequences
         :param inp: input tokens as vector representation
         """
 
         self.eos_token_id = eos_token_id
-        self.pad_token_id = pad_token_id
         self.block_size = block_size
         self.data = inp
 
@@ -48,7 +47,7 @@ class TextDataset(Dataset):
                 # get index of <EOL> token
                 index = _ground_truth.index(self.eos_token_id)
                 # slicing after + fill of with <EOL> tokens
-                _ground_truth = _ground_truth[0:index] + [self.pad_token_id] * (ground_truth_len - index)
+                _ground_truth = _ground_truth[0:index] + [self.eos_token_id] * (ground_truth_len - index)
             _ground_truth = sample[0:start_len] + _ground_truth
             ground_truth.append(_ground_truth)
         return torch.tensor(context), torch.tensor(ground_truth)
