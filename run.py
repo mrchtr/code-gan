@@ -73,6 +73,7 @@ if __name__ == '__main__':
 
     # initialize tokenizer
     tokenizer = CodeTokenizerResolver(config=config).get()
+    config.vocab_size = tokenizer.get_vocab_size()
 
     #if args.pretraining:
     #    print("Start pretraining generator ...")

@@ -72,7 +72,7 @@ class Trainer:
         if name == "SGD":
             return optim.SGD(parameters, lr=lr)
         elif name == "Adam":
-            return optim.Adam(parameters, lr=lr)
+            return optim.Adam(parameters, lr=lr, weight_decay=0.01)
         elif name == "AdamW":
             return optim.AdamW(parameters, lr=lr)
         else:
@@ -210,13 +210,13 @@ class Trainer:
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
 
-            loss_g, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
+            g_loss, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
 
             optimizer.zero_grad()
-            loss_g.backward(retain_graph=False)
+            g_loss.backward(retain_graph=False)
             torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
             optimizer.step()
-            losses.append(loss_g.item())
+            losses.append(g_loss.item())
 
         return np.mean(losses)
 
@@ -231,13 +231,13 @@ class Trainer:
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
             gradient_penalty = self.calculate_gradient_penalty(real_data, generated_data)
-            _, loss_d = self.get_losses(discriminator_real_out, discriminator_fake_out, gradient_penalty)
+            _, d_loss = self.get_losses(discriminator_real_out, discriminator_fake_out, gradient_penalty)
 
             optimizer.zero_grad()
-            loss_d.backward(retain_graph=False)
+            d_loss.backward(retain_graph=False)
             torch.nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.config.clip_norm)
             optimizer.step()
-            losses.append(loss_d.item())
+            losses.append(d_loss.item())
 
         return np.mean(losses)
 
@@ -282,7 +282,7 @@ class Trainer:
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-            ppl = torch.exp(loss / len(context_token[0]))
+            ppl = torch.exp(loss)
             # classifier accuracy
             #dis_inp = torch.cat((real_data_token, generated_data_token))
             #dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0
@@ -337,7 +337,7 @@ class Trainer:
             d_loss = bce_loss(d_out_real - d_out_fake, torch.ones_like(d_out_real)).to(self.device)
             g_loss = bce_loss(d_out_fake - d_out_real, torch.ones_like(d_out_fake)).to(self.device)
 
-        return d_loss, g_loss
+        return g_loss, d_loss
 
     def update_temperature(self, temperature, i):
         """
