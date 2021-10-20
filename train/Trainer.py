@@ -86,8 +86,8 @@ class Trainer:
         # pretrained model perplexity
         self.generate_sample()
 
-        print("Validate generator initial state: ")
-        self.eval_generator()
+        #print("Validate generator initial state: ")
+        #self.eval_generator()
 
         self._pretrain_generator()
 
