@@ -10,7 +10,7 @@ def init_config():
     To run in production mode, please the debug to false.
     Furthermore, no metrics will be log into wandb if debug is true.  
     """
-    config.debug = True
+    config.debug = False
 
     # project name in wandb
     config.project_name = "code-gan"
