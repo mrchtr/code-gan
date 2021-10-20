@@ -264,6 +264,9 @@ class Trainer:
             # create sample
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
+            generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
+            real_data_token = real_data_token[..., self.config.start_sequence_len:]
+
             # get string represenation
             generated_data_str = self.tokenizer.batch_decode(generated_data_token.to('cpu').numpy(), skip_special_tokens=False)
             real_data_str = self.tokenizer.batch_decode(real_data_token.to('cpu').numpy(), skip_special_tokens=False)
