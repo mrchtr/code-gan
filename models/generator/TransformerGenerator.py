@@ -110,7 +110,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     Generator based on the pretrained GPT-Neo of Huggingface
     """
 
-    def __init__(self, config, bos_token, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2", eos_token_id=50256):
+    def __init__(self, config, bos_token, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2", eos_token_id=50256, pad_token_id=50256):
         super(PretrainedGPTGenerator, self).__init__(config)
         self._config = config
         self.ntoken = config.vocab_size
@@ -120,7 +120,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             eos_token_id=bos_token,
             pad_token_id=bos_token
         )
-        self.transformer = GPT2Model(configuration)
+        self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id, eos_token_id=config.eos_token_id, pad_token_id=config.pad_token_id)
         #self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
         self.config = self.transformer.config
         self.config.eos_token_id = self._config.eos_token_id
@@ -172,14 +172,13 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
-        # todo add padding to not endforce the fixed length of sample
         sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id)
 
         # pad first seq to desired length
         # pad all seqs to desired length
 
         # this is what you want:
-        out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.eos_token_id)
+        out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.pad_token_id)
         for i, tensor in enumerate(sample):
             length = tensor.size(0)
             # use index notation to prevent duplicate references to the tensor
