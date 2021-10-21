@@ -59,7 +59,7 @@ def init_config():
 
     # discriminator model
     config.discriminator = "CNN"
-    config.discriminator_embedding_dim = 32
+    config.discriminator_embedding_dim = 64
 
 
 

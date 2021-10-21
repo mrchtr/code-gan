@@ -125,7 +125,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         self.config = self.transformer.config
         self.config.eos_token_id = self._config.eos_token_id
         self.transformer.resize_token_embeddings(self.ntoken)
-        self.lm_head = nn.Linear(self.transformer.config.n_embd, self.ntoken, bias=False)
+        self.lm_head = nn.Linear(self.transformer.config.n_embd, self.ntoken)
 
         # freeze transformer for training
         if config.freezing_transformer is True:

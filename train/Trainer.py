@@ -157,6 +157,11 @@ class Trainer:
 
                 if i % 500 == 0:
                     self.generate_selected_samples()
+                    bleu, es, ppl = self.eval_generator()
+                    print(f"PPL: {ppl}")
+
+                if i >= 100000:
+                    break
 
         self.generate_selected_samples()
         torch.save(self.generator.state_dict(), 'generator.pth')
