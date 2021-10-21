@@ -6,9 +6,8 @@ from transformers import GPT2Tokenizer
 from config import init_config
 from data.Dataset import TextDataset
 from models.discriminator.Discriminator import CNNDiscriminator, CodeBertDiscriminator, RelGAN_D
-from models.generator.Generator import GeneratorLSTM
 
-from models.generator.TransformerGenerator import TransformerGenerator, PretrainedGPTGenerator
+from models.generator.TransformerGenerator import PretrainedGPTGenerator
 from train.Pretrainer import Pretrainer
 from train.Trainer import Trainer
 from utils.Tokenizer import CodeTokenizerResolver
@@ -17,8 +16,7 @@ from tqdm import tqdm
 import wandb
 
 def init_wandb_logger(config):
-    project_name = "code-gan-debug"
-    return wandb.init(project=project_name, config=config)
+    return wandb.init(project=config.project_name, config=config)
 
 def tokenize_files(source, tokenizer, config):
     with open(source) as f:
@@ -90,7 +88,7 @@ if __name__ == '__main__':
     #    exit()
 
     config.eos_token_id = tokenizer.encode("<EOL>")[0]
-    config.pad_token_id = tokenizer.encode("<PAD>")[0]
+    config.pad_token_id = tokenizer.encode("<pad>")[0]
     train, eval = load_datasets(config, tokenizer, config.eos_token_id, config.pad_token_id)
     context, ground_truth = train.get_random_context_with_ground_truth(start_len=10, seq_len=12, batch_size=1)
     print(f"Context: {context}")

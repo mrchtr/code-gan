@@ -30,7 +30,7 @@ class Trainer:
     Holding both models for the adversarial training and the main training loop.
     """
 
-    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None, dataset_eval = None):
+    def __init__(self, generator, discriminator, dataset, tokenizer, config, logger=None, dataset_eval=None):
         """
         :param generator: Generator model
         :param discriminator: Discriminator model
@@ -66,7 +66,7 @@ class Trainer:
         self.generator = self.generator.to(self.device)
         self.discriminator = self.discriminator.to(self.device)
 
-        #self.metrics = Metrics(config.sequence_length)
+        # self.metrics = Metrics(config.sequence_length)
         self.logger = logger
 
     @staticmethod
@@ -84,13 +84,6 @@ class Trainer:
         """
         Main training loop. Including pretraining and adverserial training
         """
-        global global_log_step
-        # pretrained model perplexity
-        #self.generate_sample()
-
-        #print("Validate generator initial state: ")
-        #self.eval_generator()
-
         self._pretrain_generator()
 
         self._adversarial_training()
@@ -109,7 +102,8 @@ class Trainer:
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist(), skip_special_tokens=False)
             print(f"Given:        {self.tokenizer.decode(context[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(f"Proposed:     {sample_str}")
-            print(f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy(), skip_special_tokens=False)}")
+            print(
+                f"Ground Truth: {self.tokenizer.decode(ground_truth[0].to('cpu').numpy(), skip_special_tokens=False)}")
             print(60 * "-")
         except:
             print(f"Error while generating sample")
@@ -121,6 +115,13 @@ class Trainer:
             "def __init__(",
             "for x in el:",
             "import pandas as pd <EOL> def load_data(",
+            "def process_response(self, request, response):<EOL><DEDENT> if",
+            "class OrderManager(Manager) <EOL>",
+            "datetime_re = _lazy_re_compile(<EOL>r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'<EOL>",
+            "import datetime <EOL> def parse_duration(value): <EOL>",
+            "RANDOM_STRING_CHARS = '<STR_LIT>' <EOL> def get_random_string(length, allowed_chars=RANDOM_STRING_CHARS): <EOL>",
+            "def constant_time_compare(val1, val2):<EOL>",
+            "def pbkdf2(password,"
         ]
         self.generator.eval()
         try:
@@ -128,7 +129,8 @@ class Trainer:
                 for sample in lines_to_complete:
                     input_tokens = self.tokenizer.encode(sample, return_tensors='pt').to(self.device)
                     completed_line = self.generator.sample(input_tokens, self.sequence_length, 1).to('cpu')
-                    print(self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=False))
+                    print(
+                        self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=False))
                 print(60 * "-")
         except Exception as e:
             print(f"Error while generating sample: {e}")
@@ -152,12 +154,12 @@ class Trainer:
                 torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
                 optimizer.step()
                 losses.append(loss.item())
-                #print(loss.item())
-                self.logger.log({f"pretraining/loss": loss.item(), "iteration" : i})
+                # print(loss.item())
+                self.logger.log({f"pretraining/loss": loss.item(), "iteration": i})
 
                 if i % 500 == 0:
                     self.generate_selected_samples()
-                    bleu, es, ppl = self.eval_generator()
+                    bleu, es, ppl = self.eval_generator(validation_set=True)
                     print(f"PPL: {ppl}")
 
                 if i >= 100000:
@@ -181,7 +183,7 @@ class Trainer:
             loss_d = self.adv_train_discriminator(discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
-            bleu, es, ppl  = self.eval_generator()
+            bleu, es, ppl = self.eval_generator(validation_set=True)
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
@@ -200,21 +202,16 @@ class Trainer:
                 artifact.add_file('generator.pth')
                 self.logger.log_artifact(artifact)
 
-
-    def _generate_context(self, validation_set = False):
+    def _generate_context(self, validation_set=False):
         if validation_set:
             dataset = self.dataset_eval
         else:
             dataset = self.dataset
-        if self.config.noise_as_context:
-            return torch.LongTensor([0] * self.batch_size * self.config.block_size).reshape(self.batch_size,
-                                                                                            self.config.block_size).to(
-                self.device)
-        else:
-            context, ground_truth = dataset.get_random_context_with_ground_truth(self.batch_size,
-                                                                                      self.config.start_sequence_len,
-                                                                                      self.config.sequence_length)
-            return context.to(self.device), ground_truth.to(self.device)
+
+        context, ground_truth = dataset.get_random_context_with_ground_truth(self.batch_size,
+                                                                             self.config.start_sequence_len,
+                                                                             self.config.sequence_length)
+        return context.to(self.device), ground_truth.to(self.device)
 
     # todo check if we can combine train dis and gen to one method
     def adv_train_generator(self, optimizer):
@@ -223,7 +220,7 @@ class Trainer:
         for i in range(self.g_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
-            #generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
+            # generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
 
@@ -243,7 +240,7 @@ class Trainer:
         for i in range(self.d_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
                                                    num_samples=self.batch_size).to(self.device)
-            #generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
+            # generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
 
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
@@ -274,18 +271,18 @@ class Trainer:
         levenstein = []
 
         with torch.no_grad():
-
             # get context
             context_token, real_data_token = self._generate_context(validation_set=True)
 
             # create sample
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
-                                                   num_samples=self.batch_size).to(self.device)
+                                                         num_samples=self.batch_size).to(self.device)
             generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
             real_data_token = real_data_token[..., self.config.start_sequence_len:]
 
             # get string represenation
-            generated_data_str = self.tokenizer.batch_decode(generated_data_token.to('cpu').numpy(), skip_special_tokens=False)
+            generated_data_str = self.tokenizer.batch_decode(generated_data_token.to('cpu').numpy(),
+                                                             skip_special_tokens=False)
             real_data_str = self.tokenizer.batch_decode(real_data_token.to('cpu').numpy(), skip_special_tokens=False)
 
             # bleu & levenstein
@@ -295,7 +292,7 @@ class Trainer:
                 bleu.append(get_bleu(generated, real))
                 levenstein.append(jellyfish.levenshtein_distance(generated, real))
 
-            #perplexity
+            # perplexity
             loss = self.generator(context_token, return_dict=True).loss
             ppl = torch.exp(loss.mean())
 

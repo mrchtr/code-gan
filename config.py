@@ -18,75 +18,73 @@ def init_config():
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    # dataset configuration
-    config.benchmark_dataset = False  # True or False
-    # config.training_data = "./demo_code/out_train.txt"
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
     config.validation_data = "./data/dataset/out_test.txt"
 
-    # tokenizer configuration
-    #config.vocab_size = 52000
+    # architecture settings
+
+    # config.vocab_size = 52000 # is initialized during the start of process
     config.special_tokens = [
-        '<BOF>',
-        '<EOF>',
-        '<EOL>',
-        '<COMMENT>',
-        '<STR_LIT>',
-        '<INT_LIT>',
-        '<INDENT>',
-        '<DEDENT>',
+        '<BOF>',  # Begin of File
+        '<EOF>',  # End of File
+        '<EOL>',  # End of Line
+        '<COMMENT>',  # Comment
+        '<STR_LIT>',  # String literal > 15 chars
+        '<INT_LIT>',  # Integer literal
+        '<INDENT>',  # Indent
+        '<DEDENT>',  # Dedent
     ]
 
 
-
-    config.start_sequence_len = 64  # 25
-    config.sequence_length = 80  # 75
+    """
+    Sequence length settings. 
+        - start_sequence_len : size of the start sequence that is used as condition for the generation during GAN training
+        - sequence_len : length of generated sequence including the condition
+        - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
+    """
+    config.start_sequence_len = 64
+    config.sequence_length = 90  # 75
     config.block_size = config.start_sequence_len + config.sequence_length
 
-    # generator model
-    config.generator = "GPTCode"  # LSTM,  Transformer or GPTCode
+    """
+    Different generator that could be used inside the GAN architecture.
+        - GPT : Transformer based architecture with gumbel-softmax linear layer on top
+    """
+    config.generator = "GPT"
 
-    #pretraining generator
-    config.pretrain_generator = True
-
-    # --- used for Transformer XL
-    config.ninp = 768  # default: 768
-    config.nhead = 12
-    config.nhid = 200  # default LSTM: 128 / Transformer: 200
-    config.nlayers = 12  # default LSTM: 1 / Transformer 12
-    config.embedding_dim = 8  # embedding vector size for LSTM
-    config.dropout = 0.5
-
-
-    # discriminator model
+    """
+    Different discriminator that could be used inside the GAN architecture.
+        - CNN : CNN based architecure based on the idea of https://openreview.net/forum?id=rJedV3R5tm
+        - CodeBERT: TODO
+    """
     config.discriminator = "CNN"
     config.discriminator_embedding_dim = 64
 
-
-
-    # training related parameter & hyper parameters
-    config.pretrain_optimizer = "AdamW"
-    config.generator_optimizer = "Adam"
-    config.discriminator_optimizer = "Adam"
-
-    config.clip_norm = 2
-
+    """
+    Training parameters
+    """
 
     config.batch_size = 64
-    # config.pretraining_epochs = 0
-    #config.pretraining_steps = 2
-    config.pretraining_epochs = 1
+
+    # Pretraining
+    config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
+    config.pretraining_epochs = 0
+
+    # GAN training
+    config.generator_optimizer = "Adam"
+    config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 20000
+    config.nadv_steps = 40000
     config.g_steps = 1
     config.d_steps = 5
     config.temperature = 50
-    config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
-    config.noise_as_context = False
-    config.freezing = False
-    config.freezing_transformer = False
+    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
+    config.clip_norm = 2
+    config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
+    config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
+
     return config

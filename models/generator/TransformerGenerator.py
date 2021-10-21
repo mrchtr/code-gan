@@ -35,75 +35,6 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
 
-class TransformerGenerator(Generator):
-    """
-    Model followed concept of 'Attention is all you need'.
-    Default parameters are same that are used in gpt-2
-    """
-    def __init__(self, config):
-        super(TransformerGenerator, self).__init__(config)
-        self.config = config
-        self.pos_encoder = PositionalEncoding(config.ninp, config.dropout)  # positional encoder
-        encoder_layers = TransformerEncoderLayer(config.ninp, config.nhead, config.nhid, config.dropout)  # encoder stack
-        self.transformer_encoder = TransformerEncoder(encoder_layers, config.nlayers)
-        self.encoder = nn.Embedding(config.vocab_size, config.ninp)
-        self.ninp = config.ninp
-        self.decoder = nn.Linear(config.ninp, config.vocab_size)
-
-        self.init_weights()
-
-    def init_state(self, sz):
-        """
-        Generates square subsequent mask. For consistency method is called init state.
-        :param sz: batch_size
-        :return:
-        """
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        mask = mask.to(self.config.device)
-        return mask
-
-    def init_weights(self):
-        initrange = 0.1
-        self.encoder.weight.data.uniform_(-initrange, initrange)
-        self.decoder.bias.data.zero_()
-        self.decoder.weight.data.uniform_(-initrange, initrange)
-
-    def forward(self, src, src_mask):
-        src = self.encoder(src) * math.sqrt(self.ninp)
-        src = self.pos_encoder(src)
-        output = self.transformer_encoder(src, src_mask)
-        output = self.decoder(output)
-        #gumbel_t = self.add_gumbel(output.squeeze(1), self.device)
-        prediction = f.gumbel_softmax(output.squeeze(1))
-        next_token = torch.argmax(prediction, dim=2).detach()[:, -1]  # batch_size * 1
-        #prediction = f.log_softmax(gumbel_t * self.temperature, dim=-1)  # batch_size * n_vocab # todo this is duplicated with the torch funciton
-        prediction = prediction[:, -1, :]  # just returning the next token, cut of the first of each batch
-        return prediction, src_mask, next_token
-
-    def sample(self, context, sequence_length, batch_size, num_samples=1):
-        """
-                Generating sample of context
-                TODO: for now just the prediction of next token - apply different encoding strategies later
-                :param context: previous token
-                :param sequence_length: length of sample
-                :return:
-                """
-        global all_preds  # batch_size * seq_len * vocab_size
-        num_batch = num_samples // batch_size + 1 if num_samples != batch_size else 1
-        samples = torch.zeros(num_batch * batch_size, sequence_length).long()
-        samples.to(self.device)
-        src_mask = self.init_state(batch_size)
-        for b in range(num_batch):
-            inp = context
-            for i in range(sequence_length):
-                pred, src_mask, next_token = self.forward(inp, src_mask)
-                samples[b * batch_size:(b + 1) * batch_size, i] = next_token
-                inp = torch.from_numpy(np.append(inp.cpu(), next_token.unsqueeze(1).cpu(), axis=1)[:,1:]).to(self.device)
-        samples = samples[:num_samples]  # num_samples * seq_len
-
-        return samples
-
 
 class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     """
@@ -128,7 +59,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         self.lm_head = nn.Linear(self.transformer.config.n_embd, self.ntoken)
 
         # freeze transformer for training
-        if config.freezing_transformer is True:
+        if config.freezing_generator is True:
             for param in self.transformer.parameters():
                 param.requires_grad = False
 
@@ -180,7 +111,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
         # context should be in shape (batch_size, inp_sequence_length)
-        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, early_stopping=True, repetition_penalty=self._config.repetition_penalty)
+        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, repetition_penalty=self._config.repetition_penalty)
 
         # pad first seq to desired length
         # pad all seqs to desired length
