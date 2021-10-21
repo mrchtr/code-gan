@@ -127,8 +127,8 @@ class Trainer:
             with torch.no_grad():
                 for sample in lines_to_complete:
                     input_tokens = self.tokenizer.encode(sample, return_tensors='pt')
-                    completed_line = self.generator.sample(input_tokens, self.sequence_length,1).to('cpu')
-                    print(self.tokenizer.decode(completed_line[0].numpy().tolist(), skip_special_tokens=False))
+                    completed_line = self.generator.sample(input_tokens, self.sequence_length, 1).to('cpu')
+                    print(self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=False))
                 print(60 * "-")
         except Exception as e:
             print(f"Error while generating sample: {e}")
