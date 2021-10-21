@@ -26,9 +26,9 @@ def tokenize_files(source, tokenizer):
 
         tokenized_data = []
         print(f"Content len: {len(content)}")
-        mini_batch = 30000
-        for i in tqdm(range(0, len(content), mini_batch)):
-            tokenized_data += tokenizer.encode(content[i:i + mini_batch])
+        #mini_batch = 30000
+        #for i in tqdm(range(0, len(content), mini_batch)):
+        tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
     return tokenized_data
 
 def load_datasets(config, tokenizer, eos_token_id, pad_token_id):
