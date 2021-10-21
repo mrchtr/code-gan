@@ -10,7 +10,7 @@ def init_config():
     To run in production mode, please the debug to false.
     Furthermore, no metrics will be log into wandb if debug is true.  
     """
-    config.debug = False
+    config.debug = True
 
     # project name in wandb
     config.project_name = "code-gan"
@@ -81,16 +81,18 @@ def init_config():
     config.start_sequence_len = 40 #25
     config.batch_size = 64
     # config.pretraining_epochs = 0
-    config.pretraining_steps = 10000
+    #config.pretraining_steps = 2
+    config.pretraining_epochs = 2
     config.lr_pretrain = 5e-5
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
     config.nadv_steps = 20000
     config.g_steps = 1
-    config.d_steps = 10
+    config.d_steps = 5
     config.temperature = 50
     config.loss_type = "wgan-gp" #standard, rsgan, wgan or wgan-gp
     config.noise_as_context = False
     config.freezing = False
+    config.freezing_transformer = False
     config.repetition_penalty = 1.2
     return config

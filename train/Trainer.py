@@ -126,7 +126,7 @@ class Trainer:
         try:
             with torch.no_grad():
                 for sample in lines_to_complete:
-                    input_tokens = self.tokenizer.encode(sample, return_tensors='pt')
+                    input_tokens = self.tokenizer.encode(sample, return_tensors='pt').to(self.device)
                     completed_line = self.generator.sample(input_tokens, self.sequence_length, 1).to('cpu')
                     print(self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=False))
                 print(60 * "-")
@@ -137,42 +137,29 @@ class Trainer:
 
     def _pretrain_generator(self):
         print("Start pretraining of generator ...")
-
-        if self.config.generator == "GPTCode":
-            criterion = nn.CrossEntropyLoss()
-            #criterion = nn.NLLLoss()  # softmax already applied inside the model
-        else:
-            criterion = nn.NLLLoss()  # softmax already applied inside the model
         optimizer = self._get_optimizer(self.pretrain_optimizer, self.generator.parameters(), lr=self.lr_pretrain)
-        losses = []
-        iterator = iter(self.dataloader)
 
+        losses = []
         # initial hidden state
-        hidden = self.generator.init_state(self.batch_size)
         self.generator.train()
 
+        for _ in range(self.config.pretraining_epochs):
+            for i, batch in enumerate(tqdm(self.dataloader)):
+                input = batch[0].to(self.device)
+                loss = self.generator(input, return_dict=True).loss
+                optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
+                optimizer.step()
+                losses.append(loss.item())
+                #print(loss.item())
+                self.logger.log({f"pretraining/loss": loss.item(), "iteration" : i})
 
-        for i in tqdm(range(self.config.pretraining_steps)):
-            x, y = next(iterator)
-            x = x.to(self.device)
+                if i % 500 == 0:
+                    self.generate_selected_samples()
 
-            logits = self.generator(x, hidden, return_dict=True).logits
-
-            shift_logits = logits[..., :-1, :].contiguous()  # remove the last logits in every batch
-            shift_labels = x[..., 1:].contiguous()  # removing the first tokens in each label sequence
-            loss = criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
-            optimizer.step()
-            losses.append(loss.item())
-            #print(loss.item())
-            self.logger.log({f"pretraining/loss": loss.item(), "iteration" : i})
-
-            if i % 100 == 0:
-                self.generate_selected_samples()
-                torch.save(self.generator.state_dict(), 'generator.pth')
+        self.generate_selected_samples()
+        torch.save(self.generator.state_dict(), 'generator.pth')
 
         print(f"Mean losses: {np.mean(losses)}")
 
@@ -304,20 +291,8 @@ class Trainer:
                 levenstein.append(jellyfish.levenshtein_distance(generated, real))
 
             #perplexity
-            lm_logits = self.generator(context_token, return_dict=True).logits
-            shift_logits = lm_logits[..., :-1, :].contiguous()
-            shift_labels = context_token[..., 1:].contiguous()
-            # Flatten the tokens
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            loss = self.generator(context_token, return_dict=True).loss
             ppl = torch.exp(loss.mean())
-            # classifier accuracy
-            #dis_inp = torch.cat((real_data_token, generated_data_token))
-            #dis_y = [1] * real_data_token.shape[0] + [0] * generated_data_token.shape[0]  # real-label: 1, fake-lable: 0
-            #y_pred = self.discriminator(self.prepare_d_inp(dis_inp))
-            #y_pred = torch.round(torch.sigmoid(y_pred)).to('cpu').numpy()
-            #accuracy = accuracy_score(dis_y, y_pred, normalize=True)
-
 
         self.generator.train()
         self.discriminator.train()

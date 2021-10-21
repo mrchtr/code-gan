@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as f
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn import TransformerEncoder, TransformerEncoderLayer
+from torch.nn import TransformerEncoder, TransformerEncoderLayer, CrossEntropyLoss
 import numpy as np
 from transformers import GPTNeoModel, GPT2Model, AutoModelWithLMHead, TransfoXLConfig, GPT2Config
 from transformers.generation_utils import GenerationMixin
@@ -125,10 +125,10 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         self.config = self.transformer.config
         self.config.eos_token_id = self._config.eos_token_id
         self.transformer.resize_token_embeddings(self.ntoken)
-        self.decoder = nn.Linear(self.transformer.config.hidden_size, self.ntoken)
+        self.lm_head = nn.Linear(self.transformer.config.n_embd, self.ntoken, bias=False)
 
         # freeze transformer for training
-        if config.freezing is True:
+        if config.freezing_transformer is True:
             for param in self.transformer.parameters():
                 param.requires_grad = False
 
@@ -139,7 +139,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def forward(self, input_ids, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None,
+    def forward(self, input_ids, hidden=None, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None,
                 labels=None, gumbel=True):
         """
         TransformerGAN step forward:
@@ -154,18 +154,26 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             - pred: used for adversarial training backwards step, and sample generation
             -
         """
-        out = self.transformer(input_ids, labels)  # encoder
-        logits = self.decoder(out.last_hidden_state)  # linear layer
+        transformer_outputs = self.transformer(input_ids)  # encoder
+        hidden_states = transformer_outputs[0]
+        lm_logits = self.lm_head(hidden_states)  # linear layer
+        gumbel_t = self.add_gumbel(lm_logits, self.device)  # gumbel_t layer
 
         # needed for sequence generation, not part of the autograde graph
         # softmax operation will be applied inside the huggingface generation module
         if return_dict:
-            generation_logits = torch.mul(logits, self.temperature)
+            lm_logits = torch.mul(gumbel_t, self.temperature)
+            loss = None
+            shift_logits = lm_logits[..., :-1, :].contiguous()
+            shift_labels = input_ids[..., 1:].contiguous()
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
             return CausalLMOutputWithCrossAttentions(
-                logits=generation_logits
+                logits=lm_logits,
+                loss=loss
             )
         else:
-            gumbel_t = self.add_gumbel(logits, self.device)  # gumbel_t layer
             prediction = f.softmax(gumbel_t * self.temperature, dim=1)  # prediction
             next_token = torch.argmax(gumbel_t, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token

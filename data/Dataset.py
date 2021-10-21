@@ -30,10 +30,9 @@ class TextDataset(Dataset):
     def __getitem__(self, index):
         offset = index + self.block_size
 
-        return (
-            torch.tensor(self.data[index:offset]),
-            torch.tensor(self.data[index+1:offset+1]),
-        )
+        return torch.tensor(self.data[index:offset]),
+
+
 
     def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len):
         ground_truth_len = seq_len - start_len
