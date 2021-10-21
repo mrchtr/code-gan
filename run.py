@@ -20,7 +20,7 @@ def init_wandb_logger(config):
     project_name = "code-gan-debug"
     return wandb.init(project=project_name, config=config)
 
-def tokenize_files(source, tokenizer):
+def tokenize_files(source, tokenizer, config):
     with open(source) as f:
         content = "".join(f.readlines())
 
@@ -29,13 +29,18 @@ def tokenize_files(source, tokenizer):
         #mini_batch = 30000
         #for i in tqdm(range(0, len(content), mini_batch)):
         tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
-    return tokenized_data
+        examples = []
+        for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
+            examples.append(
+                tokenizer.build_inputs_with_special_tokens(tokenized_data[i: i + config.block_size])
+            )
+    return examples
 
 def load_datasets(config, tokenizer, eos_token_id, pad_token_id):
-    training_data = tokenize_files(config.training_data, tokenizer)
+    training_data = tokenize_files(config.training_data, tokenizer, config)
     train = TextDataset(inp=training_data, block_size=config.block_size, eos_token_id=eos_token_id, pad_token_id=pad_token_id)
 
-    eval_data = tokenize_files(config.validation_data, tokenizer)
+    eval_data = tokenize_files(config.validation_data, tokenizer, config)
     eval = TextDataset(inp=eval_data, block_size=config.block_size, eos_token_id=eos_token_id, pad_token_id=pad_token_id)
     return train, eval
 

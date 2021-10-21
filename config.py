@@ -39,8 +39,10 @@ def init_config():
     ]
 
 
-    config.block_size = 128  # in case of LSTM / Memory Unit should be 1
 
+    config.start_sequence_len = 64  # 25
+    config.sequence_length = 80  # 75
+    config.block_size = config.start_sequence_len + config.sequence_length
 
     # generator model
     config.generator = "GPTCode"  # LSTM,  Transformer or GPTCode
@@ -70,16 +72,8 @@ def init_config():
 
     config.clip_norm = 2
 
-    """
-    size of the generated example sequences. 
-    """
-    config.sequence_length = 50 #75
 
-    """
-    size of the given context for the sequence generation
-    """
-    config.start_sequence_len = 40 #25
-    config.batch_size = 32
+    config.batch_size = 64
     # config.pretraining_epochs = 0
     #config.pretraining_steps = 2
     config.pretraining_epochs = 1

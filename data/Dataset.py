@@ -28,9 +28,7 @@ class TextDataset(Dataset):
         return len(self.data) - self.block_size
 
     def __getitem__(self, index):
-        offset = index + self.block_size
-
-        return torch.tensor(self.data[index:offset]),
+        return torch.tensor(self.data[index]),
 
 
 
@@ -39,7 +37,7 @@ class TextDataset(Dataset):
         context = []
         ground_truth = []
         for _ in range(batch_size):
-            sample = self.__get_random_sample(seq_len)  # full max len sample (context, ground_truth)
+            sample = self.__get_random_sample()  # full max len sample (context, ground_truth)
             context.append(sample[0:start_len])  # build context
 
             _ground_truth = sample[start_len:seq_len]
@@ -56,10 +54,9 @@ class TextDataset(Dataset):
         samples = [self.__get_random_sample(seq_len) for _ in range(batch_size)]
         return torch.tensor(samples)
 
-    def __get_random_sample(self, seq_len):
-        max_len = self.__len__() - seq_len - 1
-        rand = randint(0, max_len)
-        return self.data[rand:rand+seq_len]
+    def __get_random_sample(self):
+        rand = randint(0, len(self.data) - self.block_size)
+        return self.data[rand]
 
 class CodeDataset(Dataset):
     """
