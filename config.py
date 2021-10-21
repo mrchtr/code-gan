@@ -79,7 +79,7 @@ def init_config():
     size of the given context for the sequence generation
     """
     config.start_sequence_len = 40 #25
-    config.batch_size = 64
+    config.batch_size = 32
     # config.pretraining_epochs = 0
     #config.pretraining_steps = 2
     config.pretraining_epochs = 1
