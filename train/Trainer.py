@@ -11,6 +11,8 @@ import torch.nn.functional as f
 
 import numpy as np
 from torchtext.data.metrics import bleu_score
+from transformers.file_utils import PaddingStrategy
+from transformers.tokenization_utils_base import TruncationStrategy
 
 from models.discriminator.Discriminator import Discriminator
 from models.generator.Generator import Generator
@@ -84,7 +86,7 @@ class Trainer:
         """
         global global_log_step
         # pretrained model perplexity
-        self.generate_sample()
+        #self.generate_sample()
 
         #print("Validate generator initial state: ")
         #self.eval_generator()
@@ -111,6 +113,27 @@ class Trainer:
             print(60 * "-")
         except:
             print(f"Error while generating sample")
+
+    def generate_selected_samples(self):
+        print(60 * "-")
+        print("Generates Test Sample")
+        lines_to_complete = [
+            "def __init__(",
+            "for x in el:",
+            "import pandas as pd <EOL> def load_data(",
+        ]
+        self.generator.eval()
+        try:
+            with torch.no_grad():
+                for sample in lines_to_complete:
+                    input_tokens = self.tokenizer.encode(sample, return_tensors='pt')
+                    completed_line = self.generator.sample(input_tokens, self.sequence_length,1).to('cpu')
+                    print(self.tokenizer.decode(completed_line[0].numpy().tolist(), skip_special_tokens=False))
+                print(60 * "-")
+        except Exception as e:
+            print(f"Error while generating sample: {e}")
+        finally:
+            self.generator.train()
 
     def _pretrain_generator(self):
         print("Start pretraining of generator ...")
@@ -148,7 +171,7 @@ class Trainer:
             self.logger.log({f"pretraining/loss": loss.item(), "iteration" : i})
 
             if i % 100 == 0:
-                self.generate_sample()
+                self.generate_selected_samples()
                 torch.save(self.generator.state_dict(), 'generator.pth')
 
         print(f"Mean losses: {np.mean(losses)}")
@@ -177,11 +200,13 @@ class Trainer:
                              "iteration": i})
 
             if i % 100 == 0:
+                self.generate_selected_samples()
+
+            if i % 1000 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')
                 artifact = wandb.Artifact('model', type='model')
                 artifact.add_file('generator.pth')
                 self.logger.log_artifact(artifact)
-                self.generate_sample()
 
 
     def _generate_context(self, validation_set = False):
