@@ -25,7 +25,8 @@ def tokenize_files(source, tokenizer):
         content = "".join(f.readlines())
 
         tokenized_data = []
-        mini_batch = 500
+        print(f"Content len: {len(content)}")
+        mini_batch = 10000
         for i in tqdm(range(0, len(content), mini_batch)):
             tokenized_data += tokenizer.encode(content[i:i + mini_batch])
     return tokenized_data
