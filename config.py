@@ -68,7 +68,7 @@ def init_config():
     config.batch_size = 64
 
     # Pretraining
-    config.pretrain_optimizer = "Adam"
+    config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
     config.pretraining_epochs = 20
 
