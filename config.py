@@ -45,7 +45,7 @@ def init_config():
     """
     config.start_sequence_len = 64
     config.sequence_length = 90  # 75
-    config.block_size = config.start_sequence_len + config.sequence_length
+    config.block_size = config.sequence_length
 
     """
     Different generator that could be used inside the GAN architecture.
@@ -70,7 +70,7 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "Adam"
     config.lr_pretrain = 0.0000625
-    config.pretraining_epochs = 0
+    config.pretraining_epochs = 20
 
     # GAN training
     config.generator_optimizer = "Adam"
