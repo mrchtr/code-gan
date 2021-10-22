@@ -117,6 +117,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True):
+        min_len = self._config.sequence_length
         # context should be in shape (batch_size, inp_sequence_length)
         self.forward_gumbel = forward_gumbel
         if min_len > 0:
