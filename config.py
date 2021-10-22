@@ -69,15 +69,15 @@ def init_config():
 
     # Pretraining
     config.pretrain_optimizer = "Adam"
-    config.lr_pretrain = 0.0000625
-    config.pretraining_epochs = 0
+    config.lr_pretrain = 5e-5
+    config.pretraining_epochs = 20
 
     # GAN training
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 40000
+    config.nadv_steps = 20000
     config.g_steps = 1
     config.d_steps = 5
     config.temperature = 50
