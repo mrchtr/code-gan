@@ -43,6 +43,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
 
     def __init__(self, config, bos_token, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2", eos_token_id=50256, pad_token_id=50256):
         super(PretrainedGPTGenerator, self).__init__(config)
+        self.forward_gumbel = True
         self._config = config
         self.ntoken = config.vocab_size
         configuration = GPT2Config(
@@ -70,6 +71,10 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
+    def step_forward_gumbel(self, input_ids, gumbel_forward = True, return_dict=None):
+        self.forward_gumbel = gumbel_forward
+        return self.forward(input_ids, return_dict=return_dict)
+
     def forward(self, input_ids, hidden=None, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None,
                 labels=None, gumbel=True):
         """
@@ -83,18 +88,19 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         :param gumbel:
         :return:
             - pred: used for adversarial training backwards step, and sample generation
-            -
         """
         transformer_outputs = self.transformer(input_ids)  # encoder
         hidden_states = transformer_outputs[0]
         lm_logits = self.lm_head(hidden_states)  # linear layer
-        gumbel_t = self.add_gumbel(lm_logits, self.device)  # gumbel_t layer
+
+        if self.forward_gumbel:
+            lm_logits = self.add_gumbel(lm_logits, self.device)  # gumbel_t layer
 
         # needed for sequence generation, not part of the autograde graph
         # softmax operation will be applied inside the huggingface generation module
         if return_dict:
-            lm_logits = torch.mul(gumbel_t, self.temperature)
-            loss = None
+            if self.forward_gumbel:
+                lm_logits = torch.mul(lm_logits, self.temperature)
             shift_logits = lm_logits[..., :-1, :].contiguous()
             shift_labels = input_ids[..., 1:].contiguous()
             loss_fct = CrossEntropyLoss()
@@ -105,13 +111,14 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                 loss=loss
             )
         else:
-            prediction = f.softmax(gumbel_t * self.temperature, dim=1)  # prediction
-            next_token = torch.argmax(gumbel_t, dim=1).detach()  # next token - not part of autograde graph
+            prediction = f.softmax(lm_logits * self.temperature, dim=1)  # prediction
+            next_token = torch.argmax(lm_logits, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token
 
-    def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True):
+    def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True, forward_gumbel=True):
         # context should be in shape (batch_size, inp_sequence_length)
-        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, repetition_penalty=self._config.repetition_penalty)
+        self.forward_gumbel = forward_gumbel
+        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
 
         # pad first seq to desired length
         # pad all seqs to desired length

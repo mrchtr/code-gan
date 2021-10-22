@@ -96,7 +96,7 @@ class Trainer:
         print("Generates Test Sample")
         try:
             context, ground_truth = self._generate_context()
-            sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1).to(
+            sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1, gumbel_forward=False).to(
                 'cpu')  # array of sample tokens
             sample = sample[:, self.config.start_sequence_len:self.config.sequence_length]
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist(), skip_special_tokens=False)
@@ -128,7 +128,7 @@ class Trainer:
             with torch.no_grad():
                 for sample in lines_to_complete:
                     input_tokens = self.tokenizer.encode(sample, return_tensors='pt').to(self.device)
-                    completed_line = self.generator.sample(input_tokens, self.sequence_length, 1).to('cpu')
+                    completed_line = self.generator.sample(input_tokens, self.sequence_length, 1, forward_gumbel=False).to('cpu')
                     print(
                         self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=True))
                 print(60 * "-")
@@ -148,7 +148,7 @@ class Trainer:
         for _ in range(self.config.pretraining_epochs):
             for i, batch in enumerate(tqdm(self.dataloader)):
                 input = batch[0].to(self.device)
-                loss = self.generator(input, return_dict=True).loss
+                loss = self.generator.step_forward_gumbel(input, return_dict=True, gumbel_forward=False).loss
                 optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
@@ -222,7 +222,7 @@ class Trainer:
         losses = []
         for i in range(self.g_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
-                                                   num_samples=self.batch_size).to(self.device)
+                                                   num_samples=self.batch_size, forward_gumbel=True).to(self.device)
             # generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
@@ -242,7 +242,7 @@ class Trainer:
         losses = []
         for i in range(self.d_steps):
             generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
-                                                   num_samples=self.batch_size).to(self.device)
+                                                   num_samples=self.batch_size, forward_gumbel=True).to(self.device)
             # generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
 
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
@@ -279,7 +279,7 @@ class Trainer:
 
             # create sample
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
-                                                         num_samples=self.batch_size).to(self.device)
+                                                         num_samples=self.batch_size, forward_gumbel=False).to(self.device)
             generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
             real_data_token = real_data_token[..., self.config.start_sequence_len:]
 
@@ -293,10 +293,10 @@ class Trainer:
                 generated = generated_data_str[i]
                 real = real_data_str[i]
                 bleu.append(get_bleu(generated, real))
-                levenstein.append(jellyfish.levenshtein_distance(generated, real))
+                levenstein.append(jellyfish.levenshtein_distance(generated, real) / len(generated))
 
             # perplexity
-            loss = self.generator(context_token, return_dict=True).loss
+            loss = self.generator.step_forward_gumbel(context_token, return_dict=True, gumbel_forward=False).loss
             ppl = torch.exp(loss.mean())
 
         self.generator.train()
