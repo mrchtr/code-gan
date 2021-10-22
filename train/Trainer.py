@@ -130,7 +130,7 @@ class Trainer:
                     input_tokens = self.tokenizer.encode(sample, return_tensors='pt').to(self.device)
                     completed_line = self.generator.sample(input_tokens, self.sequence_length, 1).to('cpu')
                     print(
-                        self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=False))
+                        self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=True))
                 print(60 * "-")
         except Exception as e:
             print(f"Error while generating sample: {e}")
@@ -167,6 +167,9 @@ class Trainer:
 
         self.generate_selected_samples()
         torch.save(self.generator.state_dict(), 'generator.pth')
+        artifact = wandb.Artifact('model', type='model')
+        artifact.add_file('generator.pth')
+        self.logger.log_artifact(artifact)
 
         print(f"Mean losses: {np.mean(losses)}")
 
