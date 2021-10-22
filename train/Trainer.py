@@ -293,7 +293,7 @@ class Trainer:
                 generated = generated_data_str[i]
                 real = real_data_str[i]
                 bleu.append(get_bleu(generated, real))
-                levenstein.append(jellyfish.levenshtein_distance(generated, real) / len(generated))
+                levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
 
             # perplexity
             loss = self.generator.step_forward_gumbel(context_token, return_dict=True, gumbel_forward=False).loss

@@ -1,5 +1,6 @@
 import argparse
 
+import torch
 from numpy import load
 from transformers import GPT2Tokenizer
 
@@ -95,7 +96,11 @@ if __name__ == '__main__':
     print(f"Ground Truth: {ground_truth[0]}")
 
 
-    generator = PretrainedGPTGenerator(config, pretrained_model="./gpt2-code-pretrained", bos_token=config.eos_token_id)
+    generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
+    artifact = logger.use_artifact(config.saved_model, type='model')
+    artifact_dir = artifact.download()
+    generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
+
     if config.discriminator == "CNN":
         discriminator = RelGAN_D(config)
     else:

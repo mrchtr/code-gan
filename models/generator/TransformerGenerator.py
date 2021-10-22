@@ -1,5 +1,5 @@
 # --------- source code taken from: https://pytorch.org/tutorials/beginner/transformer_tutorial.html ---------
-#Original Paper and repository here : https://github.com/openai/gpt-2
+# Original Paper and repository here : https://github.com/openai/gpt-2
 
 import math
 from abc import ABC
@@ -41,7 +41,8 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
     Generator based on the pretrained GPT-Neo of Huggingface
     """
 
-    def __init__(self, config, bos_token, pretrained_model="microsoft/CodeGPT-small-py-adaptedGPT2", eos_token_id=50256, pad_token_id=50256):
+    def __init__(self, config, bos_token, eos_token_id=50256,
+                 pad_token_id=50256):
         super(PretrainedGPTGenerator, self).__init__(config)
         self.forward_gumbel = True
         self._config = config
@@ -52,8 +53,9 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             eos_token_id=bos_token,
             pad_token_id=bos_token
         )
-        self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id, eos_token_id=config.eos_token_id, pad_token_id=config.pad_token_id)
-        #self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
+        self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id,
+                                                     eos_token_id=config.eos_token_id, pad_token_id=config.pad_token_id)
+        # self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
         self.config = self.transformer.config
         self.config.eos_token_id = self._config.eos_token_id
         self.transformer.resize_token_embeddings(self.ntoken)
@@ -64,18 +66,17 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             for param in self.transformer.parameters():
                 param.requires_grad = False
 
-
-
     def init_state(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def step_forward_gumbel(self, input_ids, gumbel_forward = True, return_dict=None):
+    def step_forward_gumbel(self, input_ids, gumbel_forward=True, return_dict=None):
         self.forward_gumbel = gumbel_forward
         return self.forward(input_ids, return_dict=return_dict)
 
-    def forward(self, input_ids, hidden=None, prev_hidden=None, return_dict=None, output_attentions=None, output_hidden_states=None,
+    def forward(self, input_ids, hidden=None, prev_hidden=None, return_dict=None, output_attentions=None,
+                output_hidden_states=None,
                 labels=None, gumbel=True):
         """
         TransformerGAN step forward:
@@ -115,10 +116,17 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             next_token = torch.argmax(lm_logits, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token
 
-    def sample(self, context, sequence_length, batch_size, num_samples=1, early_stoppiong=True, forward_gumbel=True):
+    def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True):
         # context should be in shape (batch_size, inp_sequence_length)
         self.forward_gumbel = forward_gumbel
-        sample = self.generate(context, max_length=sequence_length, num_samples=1, eos_token_id=self._config.eos_token_id, top_k=5, repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
+        if min_len > 0:
+            sample = self.generate(context, max_length=sequence_length, num_samples=1,
+                                   eos_token_id=self._config.eos_token_id, top_k=5,
+                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
+        else:
+            sample = self.generate(context, max_length=sequence_length, min_length=min_len, num_samples=1,
+                                   eos_token_id=self._config.eos_token_id, top_k=5,
+                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
 
         # pad first seq to desired length
         # pad all seqs to desired length
@@ -131,7 +139,3 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             out_tensor[i, :length, ...] = tensor
         out_tensor = out_tensor.to(self._config.device)
         return out_tensor
-
-
-
-

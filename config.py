@@ -14,6 +14,7 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan"
+    config.saved_model = 'mrchtr/code-gan/model:v2'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -70,16 +71,16 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 1
+    config.pretraining_epochs = 0
 
     # GAN training
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 10000
+    config.nadv_steps = 5000
     config.g_steps = 1
-    config.d_steps = 1
+    config.d_steps = 10
     config.temperature = 50
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2

@@ -1,18 +1,22 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --job-name=pretrain
+#SBATCH --job-name=code-gan
 #SBATCH --partition=clara-job
-#SBATCH --time=00:48:00
+#SBATCH --time=72:00:00
 #SBATCH --gres=gpu:v100:1
-#SBATCH --mem-per-cpu=4G
-#SBATCH --output=/work/users/mi144quky/Output/Pretraining_%j.out
+#SBATCH --mem-per-cpu=10G
 
-module load CUDA
+
 module load Python
+#module load PyTorch
+#module load Anaconda3
 
-
+#
 cd /work/users/mi144quky
+dir=$RANDOM
+mkdir $dir
+cd $dir
 
 # clone repository and checkout newest version
 git clone https://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@github.com/mrchtr/code-gan.git
@@ -27,14 +31,19 @@ mv out_eval.txt ./data/dataset/out_eval.txt
 mv out_train.txt ./data/dataset/out_train.txt
 
 # prepare venv and install dependencies
-mkdir venv
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+#conda env update -n code-gan -f environments.yml
+#source /nfs/cluster/easybuild/software/Anaconda3/2020.02/etc/profile.d/conda.sh
+#conda activate code-gan
+pip install --user -r requirements.txt
+#pip install --user transformers
+#pip install --user packaging
+#pip install --user pytz
+module load CUDA
+
 
 # login to wandb
 pip install wandb
 wandb login 61c2320b5e0b3ff1e63f99f0f87409a917645546
 
 # run training
-srun python -u run.py
+python -u run.py
