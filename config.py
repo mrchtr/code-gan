@@ -70,7 +70,7 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "Adam"
     config.lr_pretrain = 0.0000625
-    config.pretraining_epochs = 20
+    config.pretraining_epochs = 0
 
     # GAN training
     config.generator_optimizer = "Adam"
