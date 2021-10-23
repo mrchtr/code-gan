@@ -74,8 +74,8 @@ def init_config():
     config.pretraining_epochs = 0
 
     # GAN training
-    config.generator_optimizer = "AdamW"
-    config.discriminator_optimizer = "AdamW"
+    config.generator_optimizer = "Adam"
+    config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
     config.nadv_steps = 1000
