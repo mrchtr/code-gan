@@ -12,6 +12,7 @@ loss = checkpoint[﻿'loss'﻿]
 
 """
 import torch
+import wandb
 from transformers import GPT2Tokenizer
 
 from config import init_config
@@ -21,6 +22,7 @@ from utils.Preprocessor import postprocess
 if __name__ == '__main__':
     input = "class OrderManager():<EOL><INDENT>self.init():<EOL><INDENT>if self.order_manager is None : "
     config = init_config()
+    logger = wandb.init(project=config.project_name, config=config)
 
     print("Init tokenizer and model ...")
 
@@ -33,19 +35,21 @@ if __name__ == '__main__':
 
     config.vocab_size = len(tokenizer)
     generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
-    generator.load_state_dict(torch.load('generator.pth', map_location=torch.device(config.device)))
+    artifact = logger.use_artifact(config.saved_model, type='model')
+    artifact_dir = artifact.download()
+    generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
 
     # context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True
     context = tokenizer.encode(input, return_tensors='pt')
-    max_sequence_len = 50
-    min_sequence_len = 0
+    max_sequence_len = 100
+    min_sequence_len = 100
     batch_size = 1
     num_samples = 1
     forward_gumbel = True
     generated = generator.sample(context, max_sequence_len, batch_size, num_samples, min_sequence_len, forward_gumbel)
 
     # decode
-    generated = tokenizer.decode(generated[0])
+    generated = tokenizer.decode(generated[0], skip_special_tokens=False)
 
     # postprocess
     generated = postprocess(generated)

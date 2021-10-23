@@ -117,26 +117,24 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             return prediction, None, next_token
 
     def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True):
-        min_len = self._config.sequence_length
-        # context should be in shape (batch_size, inp_sequence_length)
+        if self._config.open_end_generation:
+            min_len = self._config.sequence_length
+
         self.forward_gumbel = forward_gumbel
         if min_len > 0:
-            sample = self.generate(context, max_length=sequence_length, num_samples=1,
-                                   eos_token_id=self._config.eos_token_id, top_k=5,
-                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
-        else:
             sample = self.generate(context, max_length=sequence_length, min_length=min_len, num_samples=1,
                                    eos_token_id=self._config.eos_token_id, top_k=5,
                                    repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
-
-        # pad first seq to desired length
-        # pad all seqs to desired length
-
-        # this is what you want:
-        out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.pad_token_id)
-        for i, tensor in enumerate(sample):
-            length = tensor.size(0)
-            # use index notation to prevent duplicate references to the tensor
-            out_tensor[i, :length, ...] = tensor
-        out_tensor = out_tensor.to(self._config.device)
-        return out_tensor
+            return sample
+        else:
+            sample = self.generate(context, max_length=sequence_length, num_samples=1,
+                                   eos_token_id=self._config.eos_token_id, top_k=5,
+                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
+            # pad all seqs to desired length
+            out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.pad_token_id)
+            for i, tensor in enumerate(sample):
+                length = tensor.size(0)
+                # use index notation to prevent duplicate references to the tensor
+                out_tensor[i, :length, ...] = tensor
+            out_tensor = out_tensor.to(self._config.device)
+            return out_tensor

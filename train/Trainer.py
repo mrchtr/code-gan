@@ -198,6 +198,7 @@ class Trainer:
 
             if i % 100 == 0:
                 self.generate_selected_samples()
+                self.generate_sample()
 
             if i % 1000 == 0:
                 torch.save(self.generator.state_dict(), 'generator.pth')

@@ -44,8 +44,8 @@ def init_config():
         - sequence_len : length of generated sequence including the condition
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
-    config.start_sequence_len = 32
-    config.sequence_length = 90  # 75
+    config.start_sequence_len = 64
+    config.sequence_length = 128  # 75
     config.block_size = config.sequence_length
 
     """
@@ -74,13 +74,14 @@ def init_config():
     config.pretraining_epochs = 0
 
     # GAN training
-    config.generator_optimizer = "Adam"
-    config.discriminator_optimizer = "Adam"
+    config.generator_optimizer = "AdamW"
+    config.discriminator_optimizer = "AdamW"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 5000
+    config.nadv_steps = 1000
+    config.open_end_generation = True
     config.g_steps = 1
-    config.d_steps = 10
+    config.d_steps = 5
     config.temperature = 50
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
