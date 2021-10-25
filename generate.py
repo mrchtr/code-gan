@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True
     context = tokenizer.encode(input, return_tensors='pt')
     max_sequence_len = 100
-    min_sequence_len = 100
+    min_sequence_len = 0
     batch_size = 1
     num_samples = 1
     forward_gumbel = True
