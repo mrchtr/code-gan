@@ -32,9 +32,6 @@ if __name__ == '__main__':
     config = init_config()
     logger = wandb.init(project=config.project_name, config=config)
 
-    config.data_dir = "../data/dataset"
-    config.training_data = "../data/dataset/out_train.txt"
-    config.validation_data = "../data/dataset/out_test.txt"
 
     # using gpt2 tokenizer
     tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>',
