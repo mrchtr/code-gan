@@ -1,5 +1,4 @@
-from wandb.wandb_torch import torch
-
+import torch
 import wandb
 from datasets import tqdm
 from torch.utils.data import DataLoader
@@ -61,7 +60,7 @@ if __name__ == '__main__':
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=4)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=8)
 
 
     optimizer = AdamW(model.parameters(), lr=5e-5)
