@@ -25,7 +25,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 10
+    epochs = 1
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=16)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=4)
 
 
     optimizer = AdamW(model.parameters(), lr=5e-5)
@@ -68,6 +68,7 @@ if __name__ == '__main__':
 
     model.train()
     for epoch in range(epochs):
+        i = 0
         for batch in train_dataloader:
             input = batch[0].to(config.device)
             outputs = model(input_ids=batch[0], labels=batch[0])
@@ -78,9 +79,9 @@ if __name__ == '__main__':
             progress_bar.update(1)
             logger.log({f"bert_pretrain/loss": loss.item()})
 
-        print(f"Finished epch: {epoch}")
 
-        #save to wandb
-        artifact = wandb.Artifact('model', type='model')
-        artifact.add_file('code-bert.pth')
-        logger.log_artifact(artifact)
+            if i % 1000 == 0:
+                artifact = wandb.Artifact('model', type='model')
+                artifact.add_file('code-bert.pth')
+                logger.log_artifact(artifact)
+            i+=1
