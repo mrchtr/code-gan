@@ -75,7 +75,7 @@ if __name__ == '__main__':
             optimizer.step()
             optimizer.zero_grad()
             progress_bar.update(1)
-            print(loss.item())
+            logger.log({f"bert_pretrain/loss": loss.item()})
 
         print(f"Finished epch: {epoch}")
 
