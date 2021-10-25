@@ -1,3 +1,5 @@
+from wandb.wandb_torch import torch
+
 import wandb
 from datasets import tqdm
 from torch.utils.data import DataLoader
@@ -81,6 +83,7 @@ if __name__ == '__main__':
 
 
             if i % 1000 == 0:
+                torch.save(model.state_dict(), 'code-bert.pth')
                 artifact = wandb.Artifact('model', type='model')
                 artifact.add_file('code-bert.pth')
                 logger.log_artifact(artifact)
