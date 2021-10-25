@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=64)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=16)
 
 
     optimizer = AdamW(model.parameters(), lr=5e-5)
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     model.train()
     for epoch in range(epochs):
         for batch in train_dataloader:
+            input = batch[0].to(config.device)
             outputs = model(input_ids=batch[0], labels=batch[0])
             loss = outputs.loss
             loss.backward()
