@@ -28,7 +28,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 5
+    epochs = 20
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     # load mask bert model
     model = AutoModelForCausalLM.from_pretrained("huggingface/CodeBERTa-small-v1")
     model.resize_token_embeddings(len(tokenizer))
+    model = model.to(config.device)
 
     training_data = tokenize_files(config.training_data, tokenizer, config)
     train = TextDataset(inp=training_data, block_size=config.block_size, eos_token_id=config.eos_token_id,
@@ -62,7 +63,7 @@ if __name__ == '__main__':
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=32)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=64)
 
 
     optimizer = Adam(model.parameters(), lr=4e-4)
