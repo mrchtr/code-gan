@@ -19,11 +19,9 @@ from models.generator.Generator import Generator
 from train.Metrics import Metrics
 from utils.FileUtils import create_dir_if_not_exists
 from tqdm import tqdm
-
 from utils.Metrics import get_bleu
 
 text_table = wandb.Table(columns=["sample"])
-
 
 class Trainer:
     """
@@ -159,7 +157,7 @@ class Trainer:
 
                 if i % 500 == 0:
                     self.generate_selected_samples()
-                    bleu, es, ppl = self.eval_generator(validation_set=True)
+                    bleu, es, ppl, nll = self.eval_generator(validation_set=True)
                     print(f"PPL: {ppl}")
 
                 if i >= 100000:
@@ -186,7 +184,7 @@ class Trainer:
             loss_d = self.adv_train_discriminator(discriminator_optimizer)
             print(f"D_Loss: {loss_d.item()} - G_Loss: {loss_g.item()}")
 
-            bleu, es, ppl = self.eval_generator(validation_set=True)
+            bleu, es, ppl, nll = self.eval_generator(validation_set=True)
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
@@ -194,6 +192,7 @@ class Trainer:
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
                              "generator/edit_similarity": es,
                              "generator/ppl": ppl,
+                             "generator/nll": nll,
                              "iteration": i})
 
             if i % 100 == 0:
@@ -273,7 +272,6 @@ class Trainer:
 
         bleu = []
         levenstein = []
-
         with torch.no_grad():
             # get context
             context_token, real_data_token = self._generate_context(validation_set=True)
@@ -282,7 +280,7 @@ class Trainer:
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
                                                          num_samples=self.batch_size, forward_gumbel=False).to(self.device)
             generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
-            real_data_token = real_data_token[..., self.config.start_sequence_len:]
+            #real_data_token = real_data_token[..., self.config.start_sequence_len:]
 
             # get string represenation
             generated_data_str = self.tokenizer.batch_decode(generated_data_token.to('cpu').numpy(),
@@ -298,11 +296,12 @@ class Trainer:
 
             # perplexity
             loss = self.generator.step_forward_gumbel(context_token, return_dict=True, gumbel_forward=False).loss
+            nll = loss.mean()
             ppl = torch.exp(loss.mean())
 
         self.generator.train()
         self.discriminator.train()
-        return np.mean(bleu), np.mean(levenstein), ppl
+        return np.mean(bleu), np.mean(levenstein), ppl, nll
 
     def prepare_d_inp(self, inp):
         return f.one_hot(inp, self.config.vocab_size).float()
