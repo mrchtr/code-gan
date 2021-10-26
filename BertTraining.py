@@ -1,9 +1,11 @@
 import torch
 import wandb
 from datasets import tqdm
+from torch.optim import Adam
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, AutoModelForMaskedLM, Trainer, TrainingArguments, \
-    DataCollatorForLanguageModeling, DataCollatorWithPadding, DataCollatorForWholeWordMask, RobertaForMaskedLM, AdamW
+    DataCollatorForLanguageModeling, DataCollatorWithPadding, DataCollatorForWholeWordMask, RobertaForMaskedLM, AdamW, \
+    AutoModelForCausalLM
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -26,7 +28,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 1
+    epochs = 5
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     config.vocab_size = len(tokenizer)
 
     # load mask bert model
-    model = AutoModelForMaskedLM.from_pretrained("huggingface/CodeBERTa-small-v1")
+    model = AutoModelForCausalLM.from_pretrained("huggingface/CodeBERTa-small-v1")
     model.resize_token_embeddings(len(tokenizer))
 
     training_data = tokenize_files(config.training_data, tokenizer, config)
@@ -60,10 +62,10 @@ if __name__ == '__main__':
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=8)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=32)
 
 
-    optimizer = AdamW(model.parameters(), lr=5e-5)
+    optimizer = Adam(model.parameters(), lr=4e-4)
 
     progress_bar = tqdm(range(epochs * train.__len__()))
 
@@ -75,15 +77,16 @@ if __name__ == '__main__':
             outputs = model(input_ids=batch[0], labels=batch[0])
             loss = outputs.loss
             loss.backward()
+            #print(loss.item())
             optimizer.step()
             optimizer.zero_grad()
             progress_bar.update(1)
             logger.log({f"bert_pretrain/loss": loss.item()})
 
 
-            if i % 1000 == 0:
-                torch.save(model.state_dict(), 'code-bert.pth')
-                artifact = wandb.Artifact('model', type='model')
-                artifact.add_file('code-bert.pth')
-                logger.log_artifact(artifact)
-            i+=1
+            #if i % 1000000 == 0:
+            torch.save(model.state_dict(), 'code-bert.pth')
+            artifact = wandb.Artifact('codeberta', type='model')
+            artifact.add_file('code-bert.pth')
+            logger.log_artifact(artifact)
+            #i+=1
