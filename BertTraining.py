@@ -75,7 +75,7 @@ if __name__ == '__main__':
         i = 0
         for batch in train_dataloader:
             input = batch[0].to(config.device)
-            outputs = model(input_ids=batch[0], labels=batch[0])
+            outputs = model(input_ids=input, labels=input)
             loss = outputs.loss
             loss.backward()
             #print(loss.item())
