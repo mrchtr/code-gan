@@ -28,7 +28,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 20
+    epochs = 10
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -78,16 +78,15 @@ if __name__ == '__main__':
             outputs = model(input_ids=input, labels=input)
             loss = outputs.loss
             loss.backward()
-            #print(loss.item())
             optimizer.step()
             optimizer.zero_grad()
             progress_bar.update(1)
             logger.log({f"bert_pretrain/loss": loss.item()})
 
 
-            #if i % 1000000 == 0:
-            torch.save(model.state_dict(), 'code-bert.pth')
-            artifact = wandb.Artifact('codeberta', type='model')
-            artifact.add_file('code-bert.pth')
-            logger.log_artifact(artifact)
-            #i+=1
+            if i % 10000 == 0:
+                torch.save(model.state_dict(), 'code-bert.pth')
+                artifact = wandb.Artifact('codeberta', type='model')
+                artifact.add_file('code-bert.pth')
+                logger.log_artifact(artifact)
+                i+=1
