@@ -163,11 +163,11 @@ class Trainer:
                 if i >= 100000:
                     break
 
-        self.generate_selected_samples()
-        torch.save(self.generator.state_dict(), 'generator.pth')
-        artifact = wandb.Artifact('model', type='model')
-        artifact.add_file('generator.pth')
-        self.logger.log_artifact(artifact)
+            self.generate_selected_samples()
+            torch.save(self.generator.state_dict(), 'generator.pth')
+            artifact = wandb.Artifact('gpt-pretrain', type='model')
+            artifact.add_file('generator.pth')
+            self.logger.log_artifact(artifact)
 
         print(f"Mean losses: {np.mean(losses)}")
 

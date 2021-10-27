@@ -37,13 +37,8 @@ if __name__ == '__main__':
 
 
     # using gpt2 tokenizer
-    tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>',
-                                                          bos_token='<s>', eos_token='</s>', pad_token='<pad>',
-                                                          unk_token='<|UNKNOWN|>',
-                                                          additional_special_tokens=config.special_tokens)
-
-    config.eos_token_id = tokenizer.encode("<EOL>")[0]
-    config.pad_token_id = tokenizer.encode("<pad>")[0]
+    tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
+    tokenizer.add_tokens(config.special_tokens)
     config.vocab_size = len(tokenizer)
 
     # load mask bert model

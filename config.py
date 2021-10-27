@@ -35,6 +35,7 @@ def init_config():
         '<INT_LIT>',  # Integer literal
         '<INDENT>',  # Indent
         '<DEDENT>',  # Dedent
+        '<pad>'
     ]
 
 
@@ -71,7 +72,7 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 0
+    config.pretraining_epochs = 10
 
     # GAN training
     config.generator_optimizer = "Adam"

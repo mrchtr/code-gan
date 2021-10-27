@@ -81,7 +81,9 @@ if __name__ == '__main__':
 
 
     # Load pretrained model and tokenizer
-    tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>', bos_token='<s>', eos_token='</s>', pad_token='<pad>', unk_token='<|UNKNOWN|>', additional_special_tokens=config.special_tokens)
+    #tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>', bos_token='<s>', eos_token='</s>', pad_token='<pad>', unk_token='<|UNKNOWN|>', additional_special_tokens=config.special_tokens)
+    tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
+    tokenizer.add_tokens(config.special_tokens)
     config.vocab_size = len(tokenizer)
     #if args.pretraining:
     #    print("Start pretraining generator ...")
@@ -97,9 +99,10 @@ if __name__ == '__main__':
 
 
     generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
-    artifact = logger.use_artifact(config.saved_model, type='model')
-    artifact_dir = artifact.download()
-    generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
+    if config.saved_model:
+        artifact = logger.use_artifact(config.saved_model, type='model')
+        artifact_dir = artifact.download()
+        generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
 
     if config.discriminator == "CNN":
         discriminator = RelGAN_D(config)
