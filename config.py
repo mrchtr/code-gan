@@ -14,7 +14,7 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan"
-    config.saved_model = 'mrchtr/code-gan/model:v2'
+    config.saved_model = None #'mrchtr/code-gan/model:v2'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
