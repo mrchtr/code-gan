@@ -46,7 +46,7 @@ def init_config():
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
     config.start_sequence_len = 90  # ~9-10 line of code
-    config.sequence_length = 105  # predict following line
+    config.sequence_length = 128  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
