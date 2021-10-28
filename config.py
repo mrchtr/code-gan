@@ -72,14 +72,14 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 10
+    config.pretraining_epochs = 1
 
     # GAN training
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 10000
+    config.nadv_steps = 0#10000
     config.open_end_generation = False
     config.g_steps = 1
     config.d_steps = 5  # proposed by relgan
