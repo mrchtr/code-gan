@@ -28,7 +28,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 20
+    epochs = 5
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train, shuffle=True, batch_size=64, collate_fn=data_collator)
 
 
-    optimizer = Adam(model.parameters(), lr=4e-4)
+    optimizer = Adam(model.parameters(), lr=5e-5)
 
     progress_bar = tqdm(range(epochs * train.__len__()))
 
