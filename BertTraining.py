@@ -28,7 +28,7 @@ def tokenize_files(source, tokenizer, config):
     return examples
 
 if __name__ == '__main__':
-    epochs = 5
+    epochs = 20
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         for batch in train_dataloader:
             input = batch['input_ids'].to(config.device)
             labels = batch['labels'].to(config.device)
-            outputs = model(input_ids=input, labels=input)
+            outputs = model(input_ids=input, labels=labels)
             loss = outputs.loss
             loss.backward()
             optimizer.step()
