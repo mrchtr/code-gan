@@ -14,7 +14,7 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan"
-    config.saved_model = None #'mrchtr/code-gan/model:v2'
+    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v10' #'mrchtr/code-gan/model:v2'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -46,7 +46,7 @@ def init_config():
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
     config.start_sequence_len = 90  # ~9-10 line of code
-    config.sequence_length = 128  # 105 predict following line
+    config.sequence_length = 105  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
@@ -72,19 +72,19 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 1
+    config.pretraining_epochs = 0
 
     # GAN training
     config.generator_optimizer = "Adam"
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
-    config.nadv_steps = 0#10000
+    config.nadv_steps = 10000 #10000
     config.open_end_generation = False
     config.g_steps = 1
     config.d_steps = 5  # proposed by relgan
     config.temperature = 100  # proposed by relgan
-    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
+    config.loss_type = "rsgan"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
     config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
