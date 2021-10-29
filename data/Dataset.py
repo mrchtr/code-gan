@@ -28,7 +28,7 @@ class TextDataset(Dataset):
         return len(self.data) - self.block_size
 
     def __getitem__(self, index):
-        return torch.tensor(self.data[index]),
+        return torch.tensor(self.data[index], dtype=torch.long)
 
 
 

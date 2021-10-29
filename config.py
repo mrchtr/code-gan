@@ -35,7 +35,8 @@ def init_config():
         '<INT_LIT>',  # Integer literal
         '<INDENT>',  # Indent
         '<DEDENT>',  # Dedent
-        '<pad>'
+        '<pad>',
+        '<mask>'
     ]
 
 
@@ -47,7 +48,7 @@ def init_config():
     """
     config.start_sequence_len = 90  # ~9-10 line of code
     config.sequence_length = 105  # 105 predict following line
-    config.block_size = config.sequence_length
+    config.block_size = 128 # config.sequence_length
 
     """
     Different generator that could be used inside the GAN architecture.

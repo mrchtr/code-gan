@@ -5,7 +5,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, AutoModelForMaskedLM, Trainer, TrainingArguments, \
     DataCollatorForLanguageModeling, DataCollatorWithPadding, DataCollatorForWholeWordMask, RobertaForMaskedLM, AdamW, \
-    AutoModelForCausalLM
+    AutoModelForCausalLM, RobertaTokenizer, BertTokenizer
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -23,12 +23,12 @@ def tokenize_files(source, tokenizer, config):
         examples = []
         for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
             examples.append(
-                tokenizer.build_inputs_with_special_tokens(tokenized_data[i: i + config.block_size])
+                tokenized_data[i: i + config.block_size]
             )
     return examples
 
 if __name__ == '__main__':
-    epochs = 10
+    epochs = 20
     print("Start fine-tuning BERT model ...")
 
     # init wandb & config
@@ -37,10 +37,10 @@ if __name__ == '__main__':
 
 
     # using gpt2 tokenizer
-    tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
+    tokenizer = RobertaTokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
     tokenizer.add_tokens(config.special_tokens)
-    config.eos_token_id = tokenizer.encode("<EOL>")[0]
-    config.pad_token_id = tokenizer.encode("<pad>")[0]
+    config.eos_token_id = tokenizer.convert_tokens_to_ids(tokenizer.tokenize("<EOL>"))[0]
+    config.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.tokenize("<pad>"))[0]
     config.vocab_size = len(tokenizer)
 
     # load mask bert model
@@ -54,13 +54,13 @@ if __name__ == '__main__':
 
 
     data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, mlm=False,
+        tokenizer=tokenizer, mlm=True, mlm_probability=0.15
     )
 
 
     print("INFO: Start huggingface pretraining ... ")
 
-    train_dataloader = DataLoader(train, shuffle=True, batch_size=64)
+    train_dataloader = DataLoader(train, shuffle=True, batch_size=64, collate_fn=data_collator)
 
 
     optimizer = Adam(model.parameters(), lr=4e-4)
@@ -71,7 +71,8 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         i = 0
         for batch in train_dataloader:
-            input = batch[0].to(config.device)
+            input = batch['input_ids'].to(config.device)
+            labels = batch['labels'].to(config.device)
             outputs = model(input_ids=input, labels=input)
             loss = outputs.loss
             loss.backward()
@@ -80,10 +81,7 @@ if __name__ == '__main__':
             progress_bar.update(1)
             logger.log({f"bert_pretrain/loss": loss.item()})
 
-
-            if i % 10000 == 0:
-                torch.save(model.state_dict(), 'code-bert.pth')
-                artifact = wandb.Artifact('codeberta', type='model')
-                artifact.add_file('code-bert.pth')
-                logger.log_artifact(artifact)
-                i+=1
+        torch.save(model.state_dict(), 'code-bert.pth')
+        artifact = wandb.Artifact('codeberta', type='model')
+        artifact.add_file('code-bert.pth')
+        logger.log_artifact(artifact)
