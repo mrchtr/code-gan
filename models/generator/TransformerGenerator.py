@@ -116,7 +116,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             next_token = torch.argmax(lm_logits, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token
 
-    def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True):
+    def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True, is_eval=False):
         if self._config.open_end_generation:
             min_len = self._config.sequence_length
 
@@ -125,8 +125,8 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             sample = self.generate(context, max_length=sequence_length, min_length=min_len, num_samples=1,
                                    eos_token_id=self._config.eos_token_id, top_k=5,
                                    repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
-            return sample
-        else:
+
+        if is_eval: # cutt of and padding
             sample = self.generate(context, max_length=sequence_length, num_samples=1,
                                    eos_token_id=self._config.eos_token_id, top_k=5,
                                    repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
@@ -138,3 +138,5 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                 out_tensor[i, :length, ...] = tensor
             out_tensor = out_tensor.to(self._config.device)
             return out_tensor
+
+        return sample

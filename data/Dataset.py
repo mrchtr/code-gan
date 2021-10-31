@@ -32,7 +32,7 @@ class TextDataset(Dataset):
 
 
 
-    def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len):
+    def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len, is_eval = False):
         ground_truth_len = seq_len - start_len
         context = []
         ground_truth = []
@@ -41,7 +41,7 @@ class TextDataset(Dataset):
             context.append(sample[0:start_len])  # build context
 
             _ground_truth = sample[start_len:seq_len]
-            if self.eos_token_id in _ground_truth:
+            if is_eval and self.eos_token_id in _ground_truth:
                 # get index of <EOL> token
                 index = _ground_truth.index(self.eos_token_id)
                 # slicing after + fill of with <EOL> tokens

@@ -13,7 +13,7 @@ def init_config():
     config.debug = False
 
     # project name in wandb
-    config.project_name = "code-gan"
+    config.project_name = "code-gan-debug"
     config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v10' #'mrchtr/code-gan/model:v2'
 
     # hardware settings
@@ -36,7 +36,7 @@ def init_config():
         '<INDENT>',  # Indent
         '<DEDENT>',  # Dedent
         '<pad>',
-        '<mask>'
+        #'<mask>' # just for bert
     ]
 
 
@@ -46,9 +46,9 @@ def init_config():
         - sequence_len : length of generated sequence including the condition
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
-    config.start_sequence_len = 90  # ~9-10 line of code
-    config.sequence_length = 105  # 105 predict following line
-    config.block_size = 128 # config.sequence_length
+    config.start_sequence_len = 64  # ~9-10 line of code
+    config.sequence_length = 128  # 105 predict following line
+    config.block_size = config.sequence_length
 
     """
     Different generator that could be used inside the GAN architecture.
@@ -81,7 +81,7 @@ def init_config():
     config.lr_adv_g = 1e-4  # 1e-4
     config.lr_adv_d = 1e-4  # 1e-4
     config.nadv_steps = 10000 #10000
-    config.open_end_generation = False
+    config.open_end_generation = True
     config.g_steps = 1
     config.d_steps = 5  # proposed by relgan
     config.temperature = 100  # proposed by relgan

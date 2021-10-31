@@ -213,7 +213,7 @@ class Trainer:
 
         context, ground_truth = dataset.get_random_context_with_ground_truth(self.batch_size,
                                                                              self.config.start_sequence_len,
-                                                                             self.config.sequence_length)
+                                                                             self.config.sequence_length, is_eval=validation_set)
         return context.to(self.device), ground_truth.to(self.device)
 
     # todo check if we can combine train dis and gen to one method
@@ -278,7 +278,7 @@ class Trainer:
 
             # create sample
             generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
-                                                         num_samples=self.batch_size, forward_gumbel=False).to(self.device)
+                                                         num_samples=self.batch_size, forward_gumbel=False, is_eval=True).to(self.device)
             generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
             #real_data_token = real_data_token[..., self.config.start_sequence_len:]
 
