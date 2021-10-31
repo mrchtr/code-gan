@@ -13,7 +13,7 @@ def init_config():
     config.debug = False
 
     # project name in wandb
-    config.project_name = "code-gan-debug"
+    config.project_name = "code-gan"
     config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v10' #'mrchtr/code-gan/model:v2'
 
     # hardware settings
