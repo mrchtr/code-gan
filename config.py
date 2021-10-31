@@ -14,7 +14,7 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan"
-    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v1' #'mrchtr/code-gan/model:v2'
+    config.saved_model = None #'mrchtr/code-gan/gpt-pretrain:v1' #'mrchtr/code-gan/model:v2'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -36,7 +36,7 @@ def init_config():
         '<INDENT>',  # Indent
         '<DEDENT>',  # Dedent
         '<pad>',
-        #'<mask>' # just for bert
+        '<mask>' # just for bert
     ]
 
 
@@ -47,7 +47,7 @@ def init_config():
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
     config.start_sequence_len = 64  # ~9-10 line of code
-    config.sequence_length = 128  # 105 predict following line
+    config.sequence_length = 256  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
@@ -73,7 +73,7 @@ def init_config():
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 0
+    config.pretraining_epochs = 20
 
     # GAN training
     config.generator_optimizer = "Adam"
