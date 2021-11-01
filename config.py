@@ -68,7 +68,7 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 2 # 64
+    config.batch_size = 64 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
