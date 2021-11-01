@@ -171,6 +171,21 @@ class Trainer:
 
         print(f"Mean losses: {np.mean(losses)}")
 
+    def adjust_optim(self, optimizer, n_iter):
+        """
+        adjust learning rate by inverser square root strategy.
+        https://paperswithcode.com/method/inverse-square-root-schedule
+        :param optimizer:
+        :param n_iter: current iteration
+        :return: lr
+        """
+
+        lr = self.config.lr_adv_g / math.sqrt(max(n_iter, self.config.warm_up_steps))
+        if n_iter > self.config.warm_up_steps:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+        return lr
+
     def _adversarial_training(self):
         print(f"Start adversarial training. Run for {self.nadv_steps} steps ...")
         generator_optimizer = self._get_optimizer(self.generator_optimizer, self.generator.parameters(),
@@ -188,11 +203,15 @@ class Trainer:
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
+            lr = self.adjust_optim(generator_optimizer, i)
+            lr = self.adjust_optim(discriminator_optimizer, i)
+
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
                              "generator/edit_similarity": es,
                              "generator/ppl": ppl,
                              "generator/nll": nll,
+                             "learning_rate": lr,
                              "iteration": i})
 
             if i % 100 == 0:

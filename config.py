@@ -10,11 +10,11 @@ def init_config():
     To run in production mode, please the debug to false.
     Furthermore, no metrics will be log into wandb if debug is true.  
     """
-    config.debug = False
+    config.debug = True
 
     # project name in wandb
     config.project_name = "code-gan"
-    config.saved_model = None #'mrchtr/code-gan/gpt-pretrain:v1' #'mrchtr/code-gan/model:v2'
+    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -91,5 +91,6 @@ def init_config():
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
+    config.warm_up_steps = 50
 
     return config
