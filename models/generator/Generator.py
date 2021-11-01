@@ -16,14 +16,6 @@ class Generator(nn.Module):
 
         self.device = config.device
 
-    def sample(self, context, sequence_length):
-        """
-        Sample method that generates a fake sequence based on the given context
-        :param context: context for sequence generation
-        :return:
-        """
-        # return torch.randint(0, 150, (sequence_length, ), dtype=torch.float32)  # todo implement real sampling
-        NotImplementedError()
 
     @staticmethod
     def add_gumbel(o_t, device, eps=1e-10):

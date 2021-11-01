@@ -94,7 +94,7 @@ class Trainer:
         print("Generates Test Sample")
         try:
             context, ground_truth = self._generate_context()
-            sample = self.generator.sample(context, self.sequence_length, self.batch_size, num_samples=1, gumbel_forward=False).to(
+            sample = self.generator.gen_sample(context, self.sequence_length, self.batch_size, num_samples=1, gumbel_forward=False).to(
                 'cpu')  # array of sample tokens
             sample = sample[:, self.config.start_sequence_len:self.config.sequence_length]
             sample_str = self.tokenizer.decode(sample.numpy()[0].tolist(), skip_special_tokens=False)
@@ -126,7 +126,7 @@ class Trainer:
             with torch.no_grad():
                 for sample in lines_to_complete:
                     input_tokens = self.tokenizer.encode(sample, return_tensors='pt').to(self.device)
-                    completed_line = self.generator.sample(input_tokens, self.sequence_length, 1, forward_gumbel=False).to('cpu')
+                    completed_line = self.generator.gen_sample(input_tokens, self.sequence_length, 1, forward_gumbel=False).to('cpu')
                     print(
                         self.tokenizer.decode(completed_line[0].to('cpu').numpy().tolist(), skip_special_tokens=True))
                 print(60 * "-")
@@ -221,8 +221,7 @@ class Trainer:
         x, real_data = self._generate_context()
         losses = []
         for i in range(self.g_steps):
-            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
-                                                   num_samples=self.batch_size, forward_gumbel=True).to(self.device)
+            generated_data = self.generator.gen_sample(x, self.sequence_length, self.batch_size, forward_gumbel=True).to(self.device)
             generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
@@ -241,8 +240,8 @@ class Trainer:
         x, real_data = self._generate_context()
         losses = []
         for i in range(self.d_steps):
-            generated_data = self.generator.sample(x, self.sequence_length, self.batch_size,
-                                                   num_samples=self.batch_size, forward_gumbel=True).to(self.device)
+            generated_data = self.generator.gen_sample(x, self.sequence_length, self.batch_size,
+                                                   forward_gumbel=True).to(self.device)
             generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
 
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
@@ -277,8 +276,8 @@ class Trainer:
             context_token, real_data_token = self._generate_context(validation_set=True)
 
             # create sample
-            generated_data_token = self.generator.sample(context_token, self.sequence_length, self.batch_size,
-                                                         num_samples=self.batch_size, forward_gumbel=False, is_eval=True).to(self.device)
+            generated_data_token = self.generator.gen_sample(context_token, self.sequence_length, self.batch_size,
+                                                    forward_gumbel=False, is_eval=True).to(self.device)
             generated_data_token = generated_data_token[..., self.config.start_sequence_len:]
             #real_data_token = real_data_token[..., self.config.start_sequence_len:]
 

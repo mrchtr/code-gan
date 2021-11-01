@@ -116,20 +116,33 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             next_token = torch.argmax(lm_logits, dim=1).detach()  # next token - not part of autograde graph
             return prediction, None, next_token
 
-    def sample(self, context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True, is_eval=False):
+    def gen_sample(self, context, sequence_length, batch_size, min_len=0, forward_gumbel=True, is_eval=False):
         if self._config.open_end_generation:
             min_len = self._config.sequence_length
 
         self.forward_gumbel = forward_gumbel
-        if min_len > 0:
-            sample = self.generate(context, max_length=sequence_length, min_length=min_len, num_samples=1,
-                                   eos_token_id=self._config.eos_token_id, top_k=5,
-                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
 
-        if is_eval: # cutt of and padding
-            sample = self.generate(context, max_length=sequence_length, num_samples=1,
-                                   eos_token_id=self._config.eos_token_id, top_k=5,
-                                   repetition_penalty=self._config.repetition_penalty, forward_gumbel=forward_gumbel)
+        if self._config.sampling == 'top_k':
+            sample = self.generate(context,
+                                   max_length=sequence_length,
+                                   min_length=min_len,
+                                   eos_token_id=self._config.eos_token_id,
+                                   top_k=5,
+                                   do_sample=True,
+                                   temperature=0.7)
+        else:
+            sample = self.generate(context,
+                                   max_length=sequence_length,
+                                   min_length=min_len,
+                                   num_samples=1,
+                                   eos_token_id=self._config.eos_token_id,
+                                   num_beams=5,
+                                   no_repeat_ngram_size=2,
+                                   early_stopping=True,
+                                   repetition_penalty=self._config.repetition_penalty,
+                                   forward_gumbel=forward_gumbel)
+
+        if is_eval:
             # pad all seqs to desired length
             out_tensor = sample[0].data.new(*(batch_size, sequence_length)).fill_(self.config.pad_token_id)
             for i, tensor in enumerate(sample):

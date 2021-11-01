@@ -47,7 +47,7 @@ def init_config():
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
     config.start_sequence_len = 64  # ~9-10 line of code
-    config.sequence_length = 256  # 105 predict following line
+    config.sequence_length = 128  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
@@ -68,12 +68,12 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 64 # 64
+    config.batch_size = 2 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 20
+    config.pretraining_epochs = 0
 
     # GAN training
     config.generator_optimizer = "Adam"
@@ -83,12 +83,13 @@ def init_config():
     config.nadv_steps = 10000 #10000
     config.open_end_generation = True
     config.g_steps = 1
-    config.d_steps = 5  # proposed by relgan
+    config.d_steps = 1  # proposed by relgan
     config.temperature = 100  # proposed by relgan
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
-    config.clip_norm = 2
+    config.clip_norm = 5
     config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
+    config.sampling = "top_k"
 
     return config
