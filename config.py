@@ -80,12 +80,12 @@ def init_config():
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 0.004  # 1e-4
     config.lr_adv_d = 0.004  # 1e-4
-    config.nadv_steps = 1000 #10000
+    config.nadv_steps = 3000 #10000
     config.open_end_generation = True
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
     config.temperature = 100  # proposed by relgan
-    config.loss_type = "rsgan"  # standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 5
     config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
