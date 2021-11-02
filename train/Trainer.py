@@ -184,7 +184,8 @@ class Trainer:
         if n_iter > self.config.warm_up_steps:
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        return lr
+            return lr
+        return self.config.lr_adv_g
 
     def _adversarial_training(self):
         print(f"Start adversarial training. Run for {self.nadv_steps} steps ...")
