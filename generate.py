@@ -20,16 +20,18 @@ from models.generator.TransformerGenerator import PretrainedGPTGenerator
 from utils.Preprocessor import postprocess
 
 if __name__ == '__main__':
-    input = "class OrderManager():<EOL><INDENT>self.init():<EOL><INDENT>if self.order_manager is None : "
+    #input = "class OrderManager():<EOL><INDENT>self.init():<EOL><INDENT>if self.order_manager is None : "
+    #input = "class OrderManager():<EOL><INDENT>"
+    input = "import pandas as pd <EOL> def request(url, method):<EOL> "
+
     config = init_config()
     logger = wandb.init(project=config.project_name, config=config)
 
     print("Init tokenizer and model ...")
 
-    tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>',
-                                                          bos_token='<s>', eos_token='</s>', pad_token='<pad>',
-                                                          unk_token='<|UNKNOWN|>',
-                                                          additional_special_tokens=config.special_tokens)
+    tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
+    tokenizer.add_tokens(config.special_tokens)
+    config.vocab_size = len(tokenizer)
     config.eos_token_id = tokenizer.encode("<EOL>")[0]
     config.pad_token_id = tokenizer.encode("<pad>")[0]
 
@@ -41,12 +43,12 @@ if __name__ == '__main__':
 
     # context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True
     context = tokenizer.encode(input, return_tensors='pt')
-    max_sequence_len = 100
+    max_sequence_len = 128
     min_sequence_len = 0
     batch_size = 1
     num_samples = 1
-    forward_gumbel = True
-    generated = generator.sample(context, max_sequence_len, batch_size, num_samples, min_sequence_len, forward_gumbel)
+    forward_gumbel = False
+    generated = generator.gen_sample(context, max_sequence_len, batch_size, num_samples, min_sequence_len, forward_gumbel)
 
     # decode
     generated = tokenizer.decode(generated[0], skip_special_tokens=False)

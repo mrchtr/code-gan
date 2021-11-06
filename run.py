@@ -1,8 +1,11 @@
 import argparse
+from collections import OrderedDict
 
 import torch
 from numpy import load
-from transformers import GPT2Tokenizer
+from torch.nn import Identity
+from transformers import GPT2Tokenizer, RobertaModel, RobertaConfig, BertConfig, BertModel, RobertaForCausalLM, \
+    AutoModelForCausalLM
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -106,9 +109,16 @@ if __name__ == '__main__':
 
     if config.discriminator == "CNN":
         discriminator = RelGAN_D(config)
+    elif config.discriminator == "BERT":
+        artifact = logger.use_artifact(config.base_bert_model, type='model')
+        artifact_dir = artifact.download()
+        base_model = AutoModelForCausalLM.from_pretrained("huggingface/CodeBERTa-small-v1")
+        base_model.resize_token_embeddings(len(tokenizer))
+        base_model = base_model.to(config.device)
+        base_model.load_state_dict(torch.load(artifact_dir + '/code-bert.pth', map_location=torch.device(config.device)))
+        discriminator = CodeBertDiscriminator(base_model, config)
     else:
-        #discriminator = CodeBertDiscriminator()
-        None
+        raise("No valid discriminator defined")
 
     trainer = Trainer(generator, discriminator, train, tokenizer, config, logger=logger, dataset_eval=eval)
     trainer.train()

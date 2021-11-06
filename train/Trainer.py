@@ -323,7 +323,10 @@ class Trainer:
         return np.mean(bleu), np.mean(levenstein), ppl, nll
 
     def prepare_d_inp(self, inp):
-        return f.one_hot(inp, self.config.vocab_size).float()
+        if self.config.discriminator == "BERT":
+            return inp
+        else:
+            return f.one_hot(inp, self.config.vocab_size).float()
 
     def get_losses(self, d_out_real, d_out_fake, gradient_penalty=0):
         """
@@ -383,23 +386,44 @@ class Trainer:
         Calculates the gradient penalty loss for WGAN GP
         source: https://github.com/Lornatang/WassersteinGAN_GP-PyTorch/
         """
-        # Random weight term for interpolation between real and fake data
-        real_data = self.prepare_d_inp(real_data)
-        fake_data = self.prepare_d_inp(fake_data)
-        alpha = torch.rand([real_data.shape[0], 1, 1], device=self.device)
-        alpha = alpha.expand(real_data.size())
-        interpolates = alpha * real_data + ((1 - alpha) * fake_data)
-        interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+        if self.config.discriminator == "BERT":
+            # Gradient penalty
+            real_data_embed = self.discriminator.embed(real_data)
+            fake_data_embed = self.discriminator.embed(fake_data)
+            alpha = torch.rand([real_data_embed.shape[0], 1, 1], device=self.device)
+            alpha = alpha.expand(real_data_embed.size())
 
-        dis_interpolates = self.discriminator(interpolates)
+            interpolates = (alpha * real_data_embed + (1 - alpha) * fake_data_embed).detach()
+            interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+            dis_interpolates = self.discriminator(embedding=interpolates)
 
-        grad_outputs = torch.ones(dis_interpolates.size(), device=self.device, requires_grad=False)
-        gradients = torch.autograd.grad(outputs=dis_interpolates, inputs=interpolates,
-                                        grad_outputs=grad_outputs,
-                                        create_graph=True, retain_graph=True, only_inputs=True)[0]
-        gradients = gradients.view(real_data.shape[0], -1)
+            grad_outputs = torch.ones(dis_interpolates.size(), device=self.device, requires_grad=False)
+            gradients = torch.autograd.grad(outputs=dis_interpolates, inputs=interpolates,
+                                            grad_outputs=grad_outputs,
+                                            create_graph=True, retain_graph=True, only_inputs=True)[0]
+            gradients = gradients.view(real_data.shape[0], -1)
 
-        slopes = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
-        gradient_penalty = ((slopes - 1.) ** 2).mean() * LAMBDA
+            slopes = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+            gradient_penalty = ((slopes - 1.) ** 2).mean() * LAMBDA
 
-        return gradient_penalty
+            return gradient_penalty
+        else:
+            real_data = self.prepare_d_inp(real_data)
+            fake_data = self.prepare_d_inp(fake_data)
+            alpha = torch.rand([real_data.shape[0], 1, 1], device=self.device)
+            alpha = alpha.expand(real_data.size())
+            interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+            interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+
+            dis_interpolates = self.discriminator(interpolates)
+
+            grad_outputs = torch.ones(dis_interpolates.size(), device=self.device, requires_grad=False)
+            gradients = torch.autograd.grad(outputs=dis_interpolates, inputs=interpolates,
+                                            grad_outputs=grad_outputs,
+                                            create_graph=True, retain_graph=True, only_inputs=True)[0]
+            gradients = gradients.view(real_data.shape[0], -1)
+
+            slopes = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+            gradient_penalty = ((slopes - 1.) ** 2).mean() * LAMBDA
+
+            return gradient_penalty

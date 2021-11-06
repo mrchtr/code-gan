@@ -21,20 +21,28 @@ class Discriminator(nn.Module):
 
 class CodeBertDiscriminator(Discriminator):
 
-    def __init__(self):
+    def __init__(self, base_model, config):
         super(Discriminator, self).__init__()
-        #self.encoder = AutoModel.from_pretrained("microsoft/codebert-base")
+        self.encoder = base_model
         self.dropout = nn.Dropout(0.5)
+        # linear layer
         self.dense = nn.Linear(self.encoder.config.hidden_size, 1)
 
         # freezing model
         for param in self.encoder.parameters():
             param.requieres_grad = False
+    def embed(self, inp):
+        return self.encoder.roberta(inp).last_hidden_state
 
-    def forward(self, inp):
-        #encoded = self.encoder(inp)
-        encoded = inp
-        pred = self.dropout(encoded.pooler_output)
+    def forward(self, inp = None, embedding = None):
+        if inp is not None:
+            encoded = self.encoder.roberta(inp)
+        elif embedding is not None:
+            encoded = self.encoder.roberta(inputs_embeds=embedding)
+        else:
+            raise("At least on of both parameter have to be not empty.")
+
+        pred = encoded[0]
         return self.dense(pred)
 
 class CNNDiscriminator(Discriminator):
@@ -133,7 +141,7 @@ class RelGAN_D(CNNDiscriminator):
 
         self.init_params()
 
-    def forward(self, inp):
+    def forward(self, inp = None, embedding = None):
         """
         Get logits of discriminator
         :param inp: batch_size * seq_len * vocab_size

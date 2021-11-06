@@ -13,8 +13,10 @@ def init_config():
     config.debug = False
 
     # project name in wandb
-    config.project_name = "code-gan"
-    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
+    config.project_name = "code-gan-debug"
+    #config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
+    config.saved_model = 'mrchtr/code-gan/model:v51'
+    config.base_bert_model = 'mrchtr/code-gan/codeberta:v77'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -46,8 +48,8 @@ def init_config():
         - sequence_len : length of generated sequence including the condition
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
-    config.start_sequence_len = 64  # ~9-10 line of code
-    config.sequence_length = 128  # 105 predict following line
+    config.start_sequence_len = 64#64  # ~9-10 line of code
+    config.sequence_length = 128 #128  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
@@ -61,7 +63,7 @@ def init_config():
         - CNN : CNN based architecure based on the idea of https://openreview.net/forum?id=rJedV3R5tm
         - CodeBERT: TODO
     """
-    config.discriminator = "CNN"
+    config.discriminator = "BERT" #"CNN"
     config.discriminator_embedding_dim = 64
 
     """
@@ -85,7 +87,7 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
     config.temperature = 100  # proposed by relgan
-    config.loss_type = "rsgan"  # standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 5
     config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?

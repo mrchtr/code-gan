@@ -45,6 +45,7 @@ if __name__ == '__main__':
 
     # load mask bert model
     model = AutoModelForCausalLM.from_pretrained("huggingface/CodeBERTa-small-v1")
+    #RobertaForCausualLM
     model.resize_token_embeddings(len(tokenizer))
     model = model.to(config.device)
 
