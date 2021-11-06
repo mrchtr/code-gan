@@ -14,8 +14,8 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan-debug"
-    #config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
-    config.saved_model = 'mrchtr/code-gan/model:v51'
+    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
+    #config.saved_model = 'mrchtr/code-gan/model:v51'
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v77'
 
     # hardware settings
