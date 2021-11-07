@@ -13,10 +13,10 @@ def init_config():
     config.debug = False
 
     # project name in wandb
-    config.project_name = "code-gan-debug"
+    config.project_name = "code-gan"
     config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
     #config.saved_model = 'mrchtr/code-gan/model:v51'
-    config.base_bert_model = 'mrchtr/code-gan/codeberta:v77'
+    config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
 
     # hardware settings
     config.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -87,8 +87,8 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
     config.temperature = 100  # proposed by relgan
-    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
-    config.clip_norm = 5
+    config.loss_type = "rsgan"  # standard, rsgan, wgan or wgan-gp
+    config.clip_norm = 2
     config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
