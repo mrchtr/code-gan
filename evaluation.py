@@ -160,7 +160,6 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
         m_rouge_p.append(np.mean(_rouge_p))
         m_cos_sim.append(cosinus_sim.item())
 
-        break
 
     print(f"NLL: {np.mean(m_nll)}")
     print(f"PPL: {np.mean(m_ppl)}")
