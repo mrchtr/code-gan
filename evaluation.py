@@ -112,7 +112,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
         hypothesis = []
         for _ground_truth in ground_truth:
             if config.eos_token_id in _ground_truth:
-                index = _ground_truth.index(config.eos_token_id) # get index of <EOL> token
+                index = _ground_truth.index(config.eos_token_id) + 1# get index of <EOL> token
                 _ground_truth = _ground_truth[0:index] + [config.pad_token_id] * (ground_truth_len - index) # slicing after + fill of with <EOL> tokens
             hypothesis.append(_ground_truth)
 
@@ -166,6 +166,9 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
         m_rouge_f.append(np.mean(_rouge_f))
         m_rouge_p.append(np.mean(_rouge_p))
         m_cos_sim.append(cosinus_sim.item())
+
+        if i > 1000:
+            break
 
 
     print(f"NLL: {np.mean(m_nll)}")
