@@ -55,6 +55,10 @@ def tokenize_files(source, tokenizer, config):
         #mini_batch = 30000
         #for i in tqdm(range(0, len(content), mini_batch)):
         tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
+
+        # count iteration
+        print(f"Iterations needed: {len(tokenized_data) / config.block_size / config.batch_size}")
+
         examples = []
         for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
             examples.append(
@@ -169,6 +173,15 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
     print(f"Rouge-F: {np.mean(m_rouge_f)}")
     print(f"Rouge-P: {np.mean(m_rouge_p)}")
     print(f"Cos-Sim: {np.mean(m_cos_sim)}")
+
+    logger.log({f"{prefix}/avg/nll": np.mean(m_nll),
+                f"{prefix}/avg/ppl": np.mean(m_ppl),
+                f"{prefix}/avg/levenstein": np.mean(m_levenstein),
+                f"{prefix}/avg/rouge-r": np.mean(m_rouge_r),
+                f"{prefix}/avg/rouge-f": np.mean(m_rouge_f),
+                f"{prefix}/avg/rouge-p": np.mean(m_rouge_p),
+                f"{prefix}/avg/cos-sim": np.mean(m_cos_sim),
+                })
 
 
 
