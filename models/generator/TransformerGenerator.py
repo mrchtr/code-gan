@@ -117,8 +117,13 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             return prediction, None, next_token
 
     def gen_sample(self, context, sequence_length, batch_size, min_len=0, forward_gumbel=True, is_eval=False):
-        if self._config.open_end_generation:
+        if self._config.open_end_generation and is_eval == False:
             min_len = self._config.sequence_length
+
+        if is_eval:
+            eos_token = self.config.eos_token_id
+        else:
+            eos_token = self.config.pad_token_id
 
         self.forward_gumbel = forward_gumbel
 
@@ -126,7 +131,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             sample = self.generate(context,
                                    max_length=sequence_length,
                                    min_length=min_len,
-                                   eos_token_id=self._config.pad_token_id,
+                                   eos_token_id=eos_token,
                                    top_k=5,
                                    do_sample=True,
                                    temperature=0.7)
@@ -135,7 +140,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                                    max_length=sequence_length,
                                    min_length=min_len,
                                    num_samples=1,
-                                   eos_token_id=self._config.pad_token_id,
+                                   eos_token_id=eos_token,
                                    num_beams=5,
                                    no_repeat_ngram_size=2,
                                    early_stopping=True,

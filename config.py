@@ -15,7 +15,7 @@ def init_config():
     # project name in wandb
     config.project_name = "code-gan"
     config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
-    #config.saved_model = 'mrchtr/code-gan/model:v51'
+    #config.saved_model = 'mrchtr/code-gan/model:v60'
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
 
     # hardware settings
@@ -48,7 +48,7 @@ def init_config():
         - sequence_len : length of generated sequence including the condition
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
-    config.start_sequence_len = 64#64  # ~9-10 line of code
+    config.start_sequence_len = 64 #64  # ~9-10 line of code
     config.sequence_length = 128 #128  # 105 predict following line
     config.block_size = config.sequence_length
 

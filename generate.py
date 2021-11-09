@@ -20,9 +20,8 @@ from models.generator.TransformerGenerator import PretrainedGPTGenerator
 from utils.Preprocessor import postprocess
 
 if __name__ == '__main__':
-    #input = "class OrderManager():<EOL><INDENT>self.init():<EOL><INDENT>if self.order_manager is None : "
+    input = "class OrderManager():<EOL><INDENT>self.init():<EOL><INDENT>if self.order_manager is None : "
     #input = "class OrderManager():<EOL><INDENT>"
-    input = "import pandas as pd <EOL> def request(url, method):<EOL> "
 
     config = init_config()
     logger = wandb.init(project=config.project_name, config=config)
@@ -43,7 +42,7 @@ if __name__ == '__main__':
 
     # context, sequence_length, batch_size, num_samples=1, min_len=0, forward_gumbel=True
     context = tokenizer.encode(input, return_tensors='pt')
-    max_sequence_len = 128
+    max_sequence_len = 256
     min_sequence_len = 0
     batch_size = 1
     num_samples = 1
