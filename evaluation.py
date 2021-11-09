@@ -12,25 +12,27 @@ from data.Dataset import TextDataset
 from models.generator.TransformerGenerator import PretrainedGPTGenerator
 
 rouge = Rouge()
+"""
+     {
+     "id": "pretrain",
+     "name": "fearful-phantasm-56",
+     "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+     "note": "pretrained baseline gpt2"
+ },
+ {
+     "id": "1",
+     "name": "glorious-violet-65",
+     "model_name": "mrchtr/code-gan/model:v54",
+     "note": "cnn rsgan"
+ },
+ {
+     "id": "2",
+     "name": "resilient-brook-66",
+     "model_name": "mrchtr/code-gan/model:v53",
+     "note": "cnn wgan-gp"
+ },
+ """
 models = [
-    {
-        "id": "pretrain",
-        "name": "fearful-phantasm-56",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
-        "note": "pretrained baseline gpt2"
-    },
-    {
-        "id": "1",
-        "name": "glorious-violet-65",
-        "model_name": "mrchtr/code-gan/model:v54",
-        "note": "cnn rsgan"
-    },
-    {
-        "id": "2",
-        "name": "resilient-brook-66",
-        "model_name": "mrchtr/code-gan/model:v53",
-        "note": "cnn wgan-gp"
-    },
     {
         "id": "3",
         "name": "scarlet-wildflower-69",
