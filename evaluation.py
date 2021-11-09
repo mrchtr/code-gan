@@ -79,6 +79,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
     artifact = logger.use_artifact(model_name, type='model')
     artifact_dir = artifact.download()
     generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
+    generator = generator.to(config.device)
     generator.eval()
 
 
@@ -195,6 +196,7 @@ if __name__ == '__main__':
     bert_model.resize_token_embeddings(len(tokenizer))
     bert_model = bert_model.to(config.device)
     bert_model.load_state_dict(torch.load(artifact_dir + '/code-bert.pth', map_location=torch.device(config.device)))
+    bert_model = bert_model.to(config.device)
 
     # load eval dataset
     config.eos_token_id = tokenizer.encode("<EOL>")[0]
