@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_eval.txt"
+    config.validation_data = "./data/dataset/out_test.txt"
 
     # architecture settings
 

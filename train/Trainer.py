@@ -240,13 +240,14 @@ class Trainer:
         x, real_data = self._generate_context()
         losses = []
         for i in range(self.g_steps):
+            mle_loss = self.generator.step_forward_gumbel(x, return_dict=True, gumbel_forward=False).loss
             generated_data = self.generator.gen_sample(x, self.sequence_length, self.batch_size, forward_gumbel=True).to(self.device)
             generated_data = generated_data[:, self.config.start_sequence_len:self.config.sequence_length]
             discriminator_real_out = self.discriminator(self.prepare_d_inp(real_data))
             discriminator_fake_out = self.discriminator(self.prepare_d_inp(generated_data))
 
             g_loss, _ = self.get_losses(discriminator_real_out, discriminator_fake_out)
-
+            g_loss = mle_loss + g_loss
             optimizer.zero_grad()
             g_loss.backward(retain_graph=False)
             torch.nn.utils.clip_grad_norm_(self.generator.parameters(), self.config.clip_norm)
