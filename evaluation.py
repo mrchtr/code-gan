@@ -16,7 +16,7 @@ rouge = Rouge()
      {
      "id": "pretrain",
      "name": "fearful-phantasm-56",
-     "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+     "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
      "note": "pretrained baseline gpt2"
  },
  {
@@ -48,20 +48,8 @@ models = [
     {
         "id": "pretrain",
         "name": "fearful-phantasm-56",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
         "note": "pretrained baseline gpt2"
-    },
-    {
-        "id": "1",
-        "name": "glorious-violet-65",
-        "model_name": "mrchtr/code-gan/model:v54",
-        "note": "cnn rsgan"
-    },
-    {
-        "id": "2",
-        "name": "resilient-brook-66",
-        "model_name": "mrchtr/code-gan/model:v53",
-        "note": "cnn wgan-gp"
     }
 ]
 
@@ -92,6 +80,26 @@ def cos_sim_2d(x, y):
     norm_y = y / np.linalg.norm(y, axis=1, keepdims=True)
     return np.matmul(norm_x, norm_y.T)
 
+def get_ppl(encodings, config, model):
+    max_length = config.sequence_length
+    stride = config.start_sequence_len
+
+    nlls = []
+    for i in tqdm(range(0, encodings.size(1), stride)):
+        begin_loc = max(i + stride - max_length, 0)
+        end_loc = min(i + stride, encodings.size(1))
+        trg_len = end_loc - i  # may be different from stride on last loop
+        input_ids = encodings[:, begin_loc:end_loc].to(config.device)
+        target_ids = input_ids.clone()
+        target_ids[:, :-trg_len] = -100
+
+        with torch.no_grad():
+            outputs = model.step_forward_gumbel(input_ids, return_dict=True, gumbel_forward=False)
+            neg_log_likelihood = outputs[0] * trg_len
+
+        nlls.append(neg_log_likelihood)
+    return torch.exp(torch.stack(nlls).sum() / end_loc)
+
 def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
     model_name = evaluation['model_name']
     prefix = f"eval-{evaluation['id']}"
@@ -116,7 +124,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
     m_cos_sim = []
 
     # run
-    for i, batch in enumerate(tqdm(dataloader)):
+    for j, batch in enumerate(tqdm(dataloader)):
         batch = batch.to(config.device) # <context, ground_truth>
         input = batch[...,:config.start_sequence_len]  # <context>
         generated = generator.gen_sample(input, config.sequence_length, config.batch_size, forward_gumbel=False, is_eval=True)
@@ -158,18 +166,15 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
             _rouge_p.append(score_dict[0]['rouge-l']['p'])
 
         # perplexity
-        loss = generator.step_forward_gumbel(input, return_dict=True, gumbel_forward=False).loss
-        nll = loss.mean()
-        ppl = torch.exp(loss.mean())
-
+        nll = 0
+        ppl = get_ppl(input, config, generator)
         # bert embeddings
         generated_embed = bert.roberta(generated_tensor).last_hidden_state
         ground_truth_embed = bert.roberta(ground_truth_tensor).last_hidden_state
         cosinus_sim = torch.cosine_similarity(generated_embed.unsqueeze(0), ground_truth_embed.unsqueeze(0))
         cosinus_sim = torch.mean(cosinus_sim)
 
-        logger.log({f"{prefix}/nll": nll.item(),
-                    f"{prefix}/ppl": ppl.item(),
+        logger.log({f"{prefix}/ppl": ppl.item(),
                     f"{prefix}/levenstein": np.mean(_levenstein),
                     f"{prefix}/rouge-r": np.mean(_rouge_r),
                     f"{prefix}/rouge-f": np.mean(_rouge_f),
@@ -177,7 +182,6 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
                     f"{prefix}/cos-sim": cosinus_sim.item(),
                     })
 
-        m_nll.append(nll.item())
         m_ppl.append(ppl.item())
         m_levenstein.append(np.mean(_levenstein))
         m_rouge_r.append(np.mean(_rouge_r))
@@ -185,11 +189,10 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert):
         m_rouge_p.append(np.mean(_rouge_p))
         m_cos_sim.append(cosinus_sim.item())
 
-        if i > 1000:
+        if j > 1000:
             break
 
 
-    print(f"NLL: {np.mean(m_nll)}")
     print(f"PPL: {np.mean(m_ppl)}")
     print(f"Levenstein: {np.mean(m_levenstein)}")
     print(f"Rouge-R: {np.mean(m_rouge_r)}")
