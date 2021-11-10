@@ -72,7 +72,7 @@ class Trainer:
         if name == "SGD":
             return optim.SGD(parameters, lr=lr)
         elif name == "Adam":
-            return optim.Adam(parameters, lr=lr, weight_decay=0.01)
+            return optim.Adam(parameters, lr=lr)
         elif name == "AdamW":
             return optim.AdamW(parameters, lr=lr)
         else:
@@ -236,7 +236,6 @@ class Trainer:
                                                                              self.config.sequence_length, is_eval=validation_set)
         return context.to(self.device), ground_truth.to(self.device)
 
-    # todo check if we can combine train dis and gen to one method
     def adv_train_generator(self, optimizer):
         x, real_data = self._generate_context()
         losses = []

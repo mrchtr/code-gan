@@ -43,7 +43,7 @@ class TextDataset(Dataset):
             _ground_truth = sample[start_len:seq_len]
             if is_eval and self.eos_token_id in _ground_truth:
                 # get index of <EOL> token
-                index = _ground_truth.index(self.eos_token_id)
+                index = _ground_truth.index(self.eos_token_id) + 1
                 # slicing after + fill of with <EOL> tokens
                 _ground_truth = _ground_truth[0:index] + [self.pad_token_id] * (ground_truth_len - index)
             #_ground_truth = sample[0:start_len] + _ground_truth
