@@ -87,7 +87,7 @@ def init_config():
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
     config.temperature = 100  # proposed by relgan
-    config.loss_type = "rsgan"  # standard, rsgan, wgan or wgan-gp
+    config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
     config.freezing_discriminator = True  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
