@@ -128,13 +128,14 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         self.forward_gumbel = forward_gumbel
 
         if self._config.sampling == 'top_k':
+            top_k = self._config.top_k
             sample = self.generate(context,
                                    max_length=sequence_length,
                                    min_length=min_len,
                                    eos_token_id=eos_token,
-                                   top_k=5,
+                                   top_k=top_k,
                                    do_sample=True,
-                                   temperature=0.7)
+                                   temperature=0.95)
         else:
             sample = self.generate(context,
                                    max_length=sequence_length,
