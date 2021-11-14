@@ -63,7 +63,7 @@ def init_config():
         - CNN : CNN based architecure based on the idea of https://openreview.net/forum?id=rJedV3R5tm
         - CodeBERT: TODO
     """
-    config.discriminator = "BERT" #"CNN"
+    config.discriminator = "CNN" #"CNN"
     config.discriminator_embedding_dim = 64
 
     """
