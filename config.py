@@ -63,7 +63,7 @@ def init_config():
         - CNN : CNN based architecure based on the idea of https://openreview.net/forum?id=rJedV3R5tm
         - CodeBERT: TODO
     """
-    config.discriminator = "CNN" #"CNN"
+    config.discriminator = "BERT" #"CNN"
     config.discriminator_embedding_dim = 64
 
     """
@@ -89,7 +89,7 @@ def init_config():
     config.temperature = 100  # proposed by relgan
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
-    config.freezing_discriminator = True  # freeze layers of pretrained discriminator ?
+    config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
