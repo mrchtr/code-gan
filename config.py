@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_test.txt"
+    config.validation_data = "./data/dataset/out_eval.txt"
 
     # architecture settings
 
@@ -63,7 +63,7 @@ def init_config():
         - CNN : CNN based architecure based on the idea of https://openreview.net/forum?id=rJedV3R5tm
         - CodeBERT: TODO
     """
-    config.discriminator = "BERT" #"CNN"
+    config.discriminator = "CNN" #"CNN"
     config.discriminator_embedding_dim = 64
 
     """
@@ -89,11 +89,14 @@ def init_config():
     config.temperature = 100  # proposed by relgan
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
-    config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
+    config.freezing_discriminator = True  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
     config.top_k = 0 #5 if top_k == 0 --> random
     config.warm_up_steps = 50
+
+    # evaluation
+    config.eval_break_at = 500
 
     return config
