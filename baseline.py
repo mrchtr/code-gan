@@ -53,6 +53,8 @@ class LSTM(nn.Module):
             tokens = tokens.to('cpu').numpy()
             for i in range(0, sequence_length):
                 state_h, state_c = self.init_state(len(batch))
+                state_h = state_h.to(config.device)
+                state_c = state_c.to(config.device)
                 x = torch.tensor(batch[-self.config.start_sequence_len:]).to(self.config.device)
                 y_pred, (state_h, state_c) = self(x[None, :], (state_h, state_c))
                 last_word_logits = y_pred[0][-1]
