@@ -93,6 +93,8 @@ if __name__ == '__main__':
 
     for epoch in range(config.baseline_train_epochs):
         state_h, state_c = lstm.init_state(config.start_sequence_len)
+        state_h = state_h.to(config.device)
+        state_c = state_c.to(config.device)
         for batch, sample in tqdm(enumerate(dataloader)):
             # prepare input
             x = sample[..., :config.start_sequence_len].to(config.device)
@@ -108,7 +110,7 @@ if __name__ == '__main__':
             logger.log({"pretrain/loss": loss.item()})
             #print({'epoch': epoch, 'batch': batch, 'loss': loss.item()})
 
-    torch.save(lstm.state_dict(), 'lstm.pth')
-    artifact = wandb.Artifact('model', type='model')
-    artifact.add_file('lstm.pth')
-    logger.log_artifact(artifact)
+        torch.save(lstm.state_dict(), 'lstm.pth')
+        artifact = wandb.Artifact('model', type='model')
+        artifact.add_file('lstm.pth')
+        logger.log_artifact(artifact)
