@@ -78,7 +78,7 @@ class LSTM(nn.Module):
             out_tensor = out_tensor.to(self.config.device)
             return out_tensor
 
-        return torch.stack(prediction)
+        return torch.stack(prediction).to(self.config.device)
 
 if __name__ == '__main__':
 
