@@ -49,7 +49,8 @@ class LSTM(nn.Module):
         sequence_length = sequence_length - self.config.start_sequence_len
         prediction = []
         for batch in context:
-            tokens = batch.numpy()
+            tokens = batch
+            tokens = tokens.to('cpu').numpy()
             for i in range(0, sequence_length):
                 state_h, state_c = self.init_state(len(batch))
                 x = torch.tensor(batch[-self.config.start_sequence_len:]).to(self.config.device)
