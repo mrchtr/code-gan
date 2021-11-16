@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import torch
 from numpy import load
+from torch import nn
 from torch.nn import Identity
 from transformers import GPT2Tokenizer, RobertaModel, RobertaConfig, BertConfig, BertModel, RobertaForCausalLM, \
     AutoModelForCausalLM
@@ -84,14 +85,9 @@ if __name__ == '__main__':
 
 
     # Load pretrained model and tokenizer
-    #tokenizer = tokenizer = GPT2Tokenizer.from_pretrained("gpt2", do_lower_case=False, sep_token='<EOL>', bos_token='<s>', eos_token='</s>', pad_token='<pad>', unk_token='<|UNKNOWN|>', additional_special_tokens=config.special_tokens)
     tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
     tokenizer.add_tokens(config.special_tokens)
     config.vocab_size = len(tokenizer)
-    #if args.pretraining:
-    #    print("Start pretraining generator ...")
-    #    pretrain()
-    #    exit()
 
     config.eos_token_id = tokenizer.encode("<EOL>")[0]
     config.pad_token_id = tokenizer.encode("<pad>")[0]
