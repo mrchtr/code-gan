@@ -58,7 +58,7 @@ class LSTM(nn.Module):
                 x = torch.tensor(batch[-self.config.start_sequence_len:]).to(self.config.device)
                 y_pred, (state_h, state_c) = self(x[None, :], (state_h, state_c))
                 last_word_logits = y_pred[0][-1]
-                p = torch.nn.functional.softmax(last_word_logits, dim=0).detach().numpy()
+                p = torch.nn.functional.softmax(last_word_logits, dim=0).detach().to('cpu').numpy()
                 token = np.random.choice(len(last_word_logits), p=p)
                 tokens = np.append(tokens, token)
 
