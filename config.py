@@ -13,7 +13,7 @@ def init_config():
     config.debug = False
 
     # project name in wandb
-    config.project_name = "code-gan-debug"
+    config.project_name = "code-gan"
     config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
     #config.saved_model = 'mrchtr/code-gan/model:v60'
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_test.txt"
+    config.validation_data = "./data/dataset/out_eval.txt"
 
     # architecture settings
 
