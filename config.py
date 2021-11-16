@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_test.txt"
+    config.validation_data = "./data/dataset/out_eval.txt"
 
     # architecture settings
 
@@ -98,6 +98,6 @@ def init_config():
 
     # evaluation
     config.baseline_train_epochs = 10
-    config.eval_break_at = 1
+    config.eval_break_at = 500
 
     return config

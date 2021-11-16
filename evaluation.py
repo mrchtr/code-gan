@@ -4,15 +4,19 @@ import jellyfish
 import torch
 from datasets import tqdm
 from rouge import Rouge
+from torch import nn
 from torch.utils.data import DataLoader
 from transformers import RobertaTokenizer, GPT2Tokenizer, AutoModelForCausalLM
 import numpy as np
 import wandb
 import pandas as pd
 
+from baseline import LSTM
 from config import init_config
 from data.Dataset import TextDataset
 from models.generator.TransformerGenerator import PretrainedGPTGenerator
+
+criterion = nn.CrossEntropyLoss()
 
 rouge = Rouge()
 models = [
@@ -172,8 +176,38 @@ models = [
         "model_name": "mrchtr/code-gan/model:v90",
         "stop_on_line_end": False,
         "sequence_len": 160
-    },
+    }
+]
 
+models = [
+    {
+        "name": "baseline lstm",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "baseline lstm openend generation (1)",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": False,
+        "sequence_len": 96
+    },
+    {
+        "name": "baseline lstm openend generation (2)",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": False,
+        "sequence_len": 128
+    },
+    {
+        "name": "baseline lstm openend generation (3)",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": False,
+        "sequence_len": 160
+    },
 
 ]
 
@@ -238,12 +272,20 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
     print(f"++++ Run evaluation for \'{run_name}\' ++++")
 
     # load model
-    generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
-    artifact = logger.use_artifact(model_name, type='model')
-    artifact_dir = artifact.download()
-    generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
-    generator = generator.to(config.device)
-    generator.eval()
+    if model_name == "mrchtr/code-gan/model:v116":
+        generator = LSTM(len(tokenizer), config.eos_token_id, config)
+        artifact = logger.use_artifact(model_name, type='model')
+        artifact_dir = artifact.download()
+        generator.load_state_dict(torch.load(artifact_dir + '/lstm.pth', map_location=torch.device(config.device)))
+        generator = generator.to(config.device)
+        generator.eval()
+    else:
+        generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
+        artifact = logger.use_artifact(model_name, type='model')
+        artifact_dir = artifact.download()
+        generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
+        generator = generator.to(config.device)
+        generator.eval()
 
     m_levenstein = []
     m_nll = []
@@ -274,7 +316,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             if stop_on_line_end and config.eos_token_id in _ground_truth:
                 index = _ground_truth.index(config.eos_token_id) + 1  # get index of <EOL> token
                 _ground_truth = _ground_truth[0:index] + [config.pad_token_id] * (
-                            ground_truth_len - index)  # slicing after + fill of with <EOL> tokens
+                        ground_truth_len - index)  # slicing after + fill of with <EOL> tokens
             hypothesis.append(_ground_truth)
 
         generated_data_str = tokenizer.batch_decode(generated,
@@ -297,8 +339,20 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             _rouge_p.append(score_dict[0]['rouge-l']['p'])
 
         # perplexity
-        ppl = get_ppl(input, config, generator)
-        nll = math.log(ppl)
+        if model_name == "mrchtr/code-gan/model:v116":
+            state_h, state_c = generator.init_state(config.start_sequence_len)
+            state_h = state_h.to(config.device)
+            state_c = state_c.to(config.device)
+            x = batch[..., :config.start_sequence_len].to(config.device)
+            y = batch[..., 1:config.start_sequence_len + 1].to(config.device)
+            y_pred, (state_h, state_c) = generator(x, (state_h, state_c))
+            loss = criterion(y_pred.transpose(1, 2), y)
+            ppl = torch.exp(loss)
+            nll = math.log(ppl)
+
+        else:
+            ppl = get_ppl(input, config, generator)
+            nll = math.log(ppl)
         # bert embeddings
         generated_embed = bert.roberta(generated_tensor).last_hidden_state
         ground_truth_embed = bert.roberta(ground_truth_tensor).last_hidden_state
@@ -308,15 +362,15 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
         for generated in generated_data_str:
             generation_len.append(len(generated.replace("<pad>", "").strip()))
 
-        logger.log({f"{prefix}/ppl": ppl.item(),
-                    f"{prefix}/levenstein": np.mean(_levenstein),
-                    f"{prefix}/edit-similarity": (100 - (100 * np.mean(_levenstein))),
-                    f"{prefix}/rouge-r": np.mean(_rouge_r),
-                    f"{prefix}/rouge-f": np.mean(_rouge_f),
-                    f"{prefix}/rouge-p": np.mean(_rouge_p),
-                    f"{prefix}/cos-sim": cosinus_sim.item(),
-                    f"{prefix}/generation-len": np.mean(generation_len)
-                    })
+        logger.log({
+            f"{prefix}/levenstein": np.mean(_levenstein),
+            f"{prefix}/edit-similarity": (100 - (100 * np.mean(_levenstein))),
+            f"{prefix}/rouge-r": np.mean(_rouge_r),
+            f"{prefix}/rouge-f": np.mean(_rouge_f),
+            f"{prefix}/rouge-p": np.mean(_rouge_p),
+            f"{prefix}/cos-sim": cosinus_sim.item(),
+            f"{prefix}/generation-len": np.mean(generation_len)
+        })
 
         m_ppl.append(ppl.item())
         m_nll.append(nll)
@@ -335,7 +389,8 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
     data = [[s] for s in m_generation_len]
     table = wandb.Table(data=data, columns=["sequence_length"])
     logger.log(
-        {'sequence-length-historgram': wandb.plot.histogram(table, "sequence lengths", "Predicted sequences lengths")})
+        {'sequence-length-historgram': wandb.plot.histogram(table, "sequence lengths", "Predicted sequences lengths")}
+    )
 
     logger.log({"eval/nll": np.mean(m_nll),
                 "eval/ppl": np.mean(m_ppl),

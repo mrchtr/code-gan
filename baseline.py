@@ -16,8 +16,10 @@ class LSTM(nn.Module):
             tokenizer.batch_decode(prediction,
                                    skip_special_tokens=False)
     """
-    def __init__(self, n_vocab):
+    def __init__(self, n_vocab, eos_token, config):
         super(LSTM, self).__init__()
+        self.eos_token = eos_token
+        self.config = config
         self.lstm_size = 128
         self.embedding_dim = 128
         self.num_layers = 3
@@ -43,21 +45,37 @@ class LSTM(nn.Module):
         return (torch.zeros(self.num_layers, sequence_length, self.lstm_size),
                 torch.zeros(self.num_layers, sequence_length, self.lstm_size))
 
-    def gen_sample(self, context, sequence_length, forward_gumbel=True, is_eval=False):
+    def gen_sample(self, context, sequence_length, batch_size, forward_gumbel=True, is_eval=False):
+        sequence_length = sequence_length - self.config.start_sequence_len
         prediction = []
         for batch in context:
             tokens = batch.numpy()
             for i in range(0, sequence_length):
                 state_h, state_c = self.init_state(len(batch))
-                x = torch.tensor(tokens).to(config.device)
+                x = torch.tensor(tokens[-self.config.start_sequence_len:]).to(self.config.device)
                 y_pred, (state_h, state_c) = self(x[None, :], (state_h, state_c))
                 last_word_logits = y_pred[0][-1]
                 p = torch.nn.functional.softmax(last_word_logits, dim=0).detach().numpy()
                 token = np.random.choice(len(last_word_logits), p=p)
-                np.append(tokens, token)
-            prediction.append(tokens)
+                tokens = np.append(tokens, token)
 
-        return prediction
+                if is_eval and token == self.eos_token:
+                    break
+            prediction.append(torch.tensor(tokens))
+
+
+
+        if is_eval:
+            # pad all seqs to desired length
+            out_tensor = prediction[0].data.new(*(batch_size, self.config.sequence_length)).fill_(self.config.pad_token_id)
+            for i, tensor in enumerate(prediction):
+                length = tensor.size(0)
+                # use index notation to prevent duplicate references to the tensor
+                out_tensor[i, :length, ...] = tensor
+            out_tensor = out_tensor.to(self.config.device)
+            return out_tensor
+
+        return torch.stack(prediction)
 
 if __name__ == '__main__':
 
