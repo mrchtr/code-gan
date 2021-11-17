@@ -181,34 +181,76 @@ models = [
 
 models = [
     {
-        "name": "baseline lstm",
-        "description": "lstm",
-        "model_name": "mrchtr/code-gan/model:v116",
+        "name": "baseline 1",
+        "description": "gpt2 pretrained for 1 epoch",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
+        "stop_on_line_end": False,
+        "sequence_len": 128
+    },
+    {
+        "name": "baseline 1",
+        "description": "gpt2 pretrained for 1 epoch",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
+        "stop_on_line_end": False,
+        "sequence_len": 160
+    },
+    {
+        "name": "cnn/wgan-gp",
+        "description": "CNN/WGAN-GP (#2 Random)",
+        "model_name": "mrchtr/code-gan/model:v106",
         "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
-        "name": "baseline lstm openend generation (1)",
-        "description": "lstm",
-        "model_name": "mrchtr/code-gan/model:v116",
+        "name": "cnn/wgan-gp",
+        "description": "CNN/WGAN-GP (#2 Random)",
+        "model_name": "mrchtr/code-gan/model:v106",
         "stop_on_line_end": False,
         "sequence_len": 96
     },
     {
-        "name": "baseline lstm openend generation (2)",
-        "description": "lstm",
-        "model_name": "mrchtr/code-gan/model:v116",
+        "name": "cnn/wgan-gp",
+        "description": "CNN/WGAN-GP (#2 Random)",
+        "model_name": "mrchtr/code-gan/model:v106",
         "stop_on_line_end": False,
         "sequence_len": 128
     },
     {
-        "name": "baseline lstm openend generation (3)",
-        "description": "lstm",
-        "model_name": "mrchtr/code-gan/model:v116",
+        "name": "cnn/wgan-gp",
+        "description": "CNN/WGAN-GP (#2 Random)",
+        "model_name": "mrchtr/code-gan/model:v106",
         "stop_on_line_end": False,
         "sequence_len": 160
     },
-
+    # without freezing
+    {
+        "name": "bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
+        "model_name": "mrchtr/code-gan/model:v117",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
+        "model_name": "mrchtr/code-gan/model:v117",
+        "stop_on_line_end": False,
+        "sequence_len": 96
+    },
+    {
+        "name": "bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
+        "model_name": "mrchtr/code-gan/model:v117",
+        "stop_on_line_end": False,
+        "sequence_len": 128
+    },
+    {
+        "name": "bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
+        "model_name": "mrchtr/code-gan/model:v117",
+        "stop_on_line_end": False,
+        "sequence_len": 160
+    }
 ]
 
 
