@@ -135,7 +135,6 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                                    eos_token_id=eos_token,
                                    top_k=top_k,
                                    do_sample=True,
-                                   num_return_sequences=5,
                                    temperature=0.95)
         else:
             sample = self.generate(context,
@@ -144,7 +143,6 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                                    num_samples=1,
                                    eos_token_id=eos_token,
                                    num_beams=5,
-                                   num_return_sequences=5,
                                    no_repeat_ngram_size=2)
 
         if is_eval:
@@ -169,7 +167,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
                                eos_token_id=eos_token,
                                top_k=top_k,
                                do_sample=True,
-                               num_return_sequences=5,
+                               num_return_sequences=1,
                                temperature=0.95)
 
 
