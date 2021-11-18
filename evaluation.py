@@ -324,7 +324,9 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             generated = generated_data_str[i]
             real = real_data_str[i]
             generated = generated.replace("<pad>", "").strip()
+            generated = generated.replace("<EOL>", "").strip()
             real = real.replace("<pad>", "").strip()
+            real = real.replace("<EOL>", "").strip()
             _levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
 
             score_dict = rouge.get_scores(real, generated)
