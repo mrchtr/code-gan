@@ -48,8 +48,8 @@ def init_config():
         - sequence_len : length of generated sequence including the condition
         - block_size : the dataset is splitted into blocks for the training process. block_size = start_len + seq_len 
     """
-    config.start_sequence_len = 128 #64  # ~9-10 line of code
-    config.sequence_length = 512 #128  # 105 predict following line
+    config.start_sequence_len = 64 #64  # ~9-10 line of code
+    config.sequence_length = 128 #128  # 105 predict following line
     config.block_size = config.sequence_length
 
     """
@@ -70,7 +70,7 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 4 # 64
+    config.batch_size = 64 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"

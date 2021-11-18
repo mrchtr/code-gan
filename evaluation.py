@@ -181,75 +181,60 @@ models = [
 
 models = [
     {
-        "name": "baseline 1",
-        "description": "gpt2 pretrained for 1 epoch",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
-        "stop_on_line_end": False,
+        "name": "baseline lstm",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
         "name": "baseline 1",
         "description": "gpt2 pretrained for 1 epoch",
         "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
-        "stop_on_line_end": False,
-        "sequence_len": 160
+        "stop_on_line_end": True,
+        "sequence_len": 128
     },
     {
-        "name": "cnn/wgan-gp",
-        "description": "CNN/WGAN-GP (#2 Random)",
-        "model_name": "mrchtr/code-gan/model:v106",
+        "name": "baseline 2",
+        "description": "gpt2 pretrained for 20 epochs",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "cnn/rsgan",
+        "description": "CNN/RSGAN (#1)",
+        "model_name": "mrchtr/code-gan/model:v88",
         "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
         "name": "cnn/wgan-gp",
-        "description": "CNN/WGAN-GP (#2 Random)",
-        "model_name": "mrchtr/code-gan/model:v106",
-        "stop_on_line_end": False,
-        "sequence_len": 96
-    },
-    {
-        "name": "cnn/wgan-gp",
-        "description": "CNN/WGAN-GP (#2 Random)",
-        "model_name": "mrchtr/code-gan/model:v106",
-        "stop_on_line_end": False,
+        "description": "CNN/WGAN-GP (#2)",
+        "model_name": "mrchtr/code-gan/model:v87",
+        "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
-        "name": "cnn/wgan-gp",
-        "description": "CNN/WGAN-GP (#2 Random)",
-        "model_name": "mrchtr/code-gan/model:v106",
-        "stop_on_line_end": False,
-        "sequence_len": 160
-    },
-    # without freezing
-    {
-        "name": "bert/wgan-gp",
-        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
-        "model_name": "mrchtr/code-gan/model:v117",
+        "name": "bert/rsgan",
+        "description": "BERT/RSGAN (#3)",
+        "model_name": "mrchtr/code-gan/model:v73",
         "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
         "name": "bert/wgan-gp",
-        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
-        "model_name": "mrchtr/code-gan/model:v117",
-        "stop_on_line_end": False,
-        "sequence_len": 96
-    },
-    {
-        "name": "bert/wgan-gp",
-        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
-        "model_name": "mrchtr/code-gan/model:v117",
-        "stop_on_line_end": False,
+        "description": "BERT/WGAN-GP (#4)",
+        "model_name": "mrchtr/code-gan/model:v74",
+        "stop_on_line_end": True,
         "sequence_len": 128
     },
     {
-        "name": "bert/wgan-gp",
-        "description": "BERT/WGAN-GP (#4 Without Freezing Dis)",
-        "model_name": "mrchtr/code-gan/model:v117",
-        "stop_on_line_end": False,
-        "sequence_len": 160
+        "name": "bert/wgan-gp/random",
+        "description": "BERT/WGAN-GP (#4 Random)",
+        "model_name": "mrchtr/code-gan/model:v90",
+        "stop_on_line_end": True,
+        "sequence_len": 128
     }
 ]
 
@@ -373,6 +358,8 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
         for i in range(0, len(generated_data_str)):
             generated = generated_data_str[i]
             real = real_data_str[i]
+            generated = generated.replace("<pad>", "").strip()
+            real = real.replace("<pad>", "").strip()
             _levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
 
             score_dict = rouge.get_scores(real, generated)
