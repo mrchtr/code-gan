@@ -181,41 +181,6 @@ models = [
 
 models = [
     {
-        "name": "baseline lstm",
-        "description": "lstm",
-        "model_name": "mrchtr/code-gan/model:v116",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
-    {
-        "name": "baseline 1",
-        "description": "gpt2 pretrained for 1 epoch",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
-    {
-        "name": "baseline 2",
-        "description": "gpt2 pretrained for 20 epochs",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
-    {
-        "name": "cnn/rsgan",
-        "description": "CNN/RSGAN (#1)",
-        "model_name": "mrchtr/code-gan/model:v88",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
-    {
-        "name": "cnn/wgan-gp",
-        "description": "CNN/WGAN-GP (#2)",
-        "model_name": "mrchtr/code-gan/model:v87",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
-    {
         "name": "bert/rsgan",
         "description": "BERT/RSGAN (#3)",
         "model_name": "mrchtr/code-gan/model:v73",
