@@ -53,7 +53,10 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             eos_token_id=bos_token,
             pad_token_id=bos_token
         )
-        self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id,
+        if config.saved_model == "GPT-Code":
+            self.transformer = AutoModelWithLMHead.from_pretrained("microsoft/CodeGPT-small-py")
+        else:
+            self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id,
                                                      eos_token_id=config.eos_token_id, pad_token_id=config.pad_token_id)
         # self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
         self.config = self.transformer.config
@@ -92,7 +95,11 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
         """
         transformer_outputs = self.transformer(input_ids)  # encoder
         hidden_states = transformer_outputs[0]
-        lm_logits = self.lm_head(hidden_states)  # linear layer
+        if self._config.saved_model == 'GPT-Code':
+            lm_logits = transformer_outputs.logits
+        else:
+            lm_logits = self.lm_head(hidden_states)  # linear layer
+
 
         if self.forward_gumbel:
             lm_logits = self.add_gumbel(lm_logits, self.device)  # gumbel_t layer

@@ -6,7 +6,7 @@ from numpy import load
 from torch import nn
 from torch.nn import Identity
 from transformers import GPT2Tokenizer, RobertaModel, RobertaConfig, BertConfig, BertModel, RobertaForCausalLM, \
-    AutoModelForCausalLM
+    AutoModelForCausalLM, AutoTokenizer
 
 from config import init_config
 from data.Dataset import TextDataset
@@ -85,9 +85,13 @@ if __name__ == '__main__':
 
 
     # Load pretrained model and tokenizer
-    tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
-    tokenizer.add_tokens(config.special_tokens)
-    config.vocab_size = len(tokenizer)
+    if config.saved_model != 'GPT-Code':
+        tokenizer = GPT2Tokenizer(vocab_file="code-tokenizer-vocab.json", merges_file="code-tokenizer-merges.txt")
+        tokenizer.add_tokens(config.special_tokens)
+        config.vocab_size = len(tokenizer)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-py")
+        config.vocab_size = len(tokenizer)
 
     config.eos_token_id = tokenizer.encode("<EOL>")[0]
     config.pad_token_id = tokenizer.encode("<pad>")[0]
@@ -98,7 +102,7 @@ if __name__ == '__main__':
 
 
     generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
-    if config.saved_model:
+    if config.saved_model and config.saved_model != 'GPT-Code':
         artifact = logger.use_artifact(config.saved_model, type='model')
         artifact_dir = artifact.download()
         generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))
@@ -111,7 +115,8 @@ if __name__ == '__main__':
         base_model = AutoModelForCausalLM.from_pretrained("huggingface/CodeBERTa-small-v1")
         base_model.resize_token_embeddings(len(tokenizer))
         base_model = base_model.to(config.device)
-        base_model.load_state_dict(torch.load(artifact_dir + '/code-bert.pth', map_location=torch.device(config.device)))
+        if config.saved_model != 'GPT-Code':
+            base_model.load_state_dict(torch.load(artifact_dir + '/code-bert.pth', map_location=torch.device(config.device)))
         discriminator = CodeBertDiscriminator(base_model, config)
     else:
         raise("No valid discriminator defined")

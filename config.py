@@ -14,7 +14,7 @@ def init_config():
 
     # project name in wandb
     config.project_name = "code-gan"
-    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v30'
+    config.saved_model = 'GPT-Code' #'mrchtr/code-gan/gpt-pretrain:v30'
     #config.saved_model = 'mrchtr/code-gan/model:v60'
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
 
@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_eval.txt"
+    config.validation_data = "./data/dataset/out_test.txt"
 
     # architecture settings
 
@@ -86,10 +86,10 @@ def init_config():
     config.open_end_generation = True
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
-    config.temperature = 1 #100 during training  # proposed by relgan
+    config.temperature = 100 #100 during training  # proposed by relgan
     config.loss_type = "wgan-gp"  # standard, rsgan, wgan or wgan-gp
     config.clip_norm = 2
-    config.freezing_discriminator = True  # freeze layers of pretrained discriminator ?
+    config.freezing_discriminator = False  # freeze layers of pretrained discriminator ?
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
