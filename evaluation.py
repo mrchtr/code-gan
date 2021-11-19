@@ -180,6 +180,41 @@ models = [
 ]
 
 models = [
+{
+        "name": "baseline lstm",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+{
+        "name": "baseline 1",
+        "description": "gpt2 pretrained for 1 epoch",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "baseline 2",
+        "description": "gpt2 pretrained for 20 epochs",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "cnn/rsgan",
+        "description": "CNN/RSGAN (#1)",
+        "model_name": "mrchtr/code-gan/model:v88",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "cnn/wgan-gp",
+        "description": "CNN/WGAN-GP (#2)",
+        "model_name": "mrchtr/code-gan/model:v87",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
     {
         "name": "bert/rsgan",
         "description": "BERT/RSGAN (#3)",
@@ -287,6 +322,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
     m_rouge_p = []
     m_cos_sim = []
     m_generation_len = []
+    accuray = []
 
     # run
     dataloader_iter = iter(dataloader)
@@ -299,6 +335,11 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
 
         generated_tensor = generated[..., config.start_sequence_len:]
         ground_truth_tensor = batch[..., config.start_sequence_len:]
+
+        # token accuracy
+        generated_flatten = generated_tensor[..., 0:1].to('cpu').numpy().flatten()
+        ground_truth_flatten = ground_truth_tensor[..., 0:1].to('cpu').numpy().flatten()
+        accuray.append(np.sum(generated_flatten == ground_truth_flatten) / len(generated_flatten))
 
         generated = generated[..., config.start_sequence_len:].to('cpu').numpy().tolist()  # <generated_tokens>
         ground_truth = batch[..., config.start_sequence_len:].to('cpu').numpy().tolist()  # <ground_truth>
@@ -324,9 +365,7 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             generated = generated_data_str[i]
             real = real_data_str[i]
             generated = generated.replace("<pad>", "").strip()
-            generated = generated.replace("<EOL>", "").strip()
             real = real.replace("<pad>", "").strip()
-            real = real.replace("<EOL>", "").strip()
             _levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
 
             if len(generated) > 0 and len(real) > 0:
@@ -398,13 +437,16 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
                 "eval/cos-sim": np.mean(m_cos_sim)
                 })
 
-    return dict(note=run_name, description=description, model_name=model_name, stop_on_line_end=stop_on_line_end,
+    return_dict = dict(note=run_name, description=description, model_name=model_name, stop_on_line_end=stop_on_line_end,
                 nll=np.mean(m_nll), ppl=np.mean(m_ppl), levenstein=np.mean(m_levenstein),
                 edit_sim=(100 - 100 * np.mean(m_levenstein)),
                 rouge_r=np.mean(m_rouge_r), rouge_f=np.mean(m_rouge_f), rouge_p=np.mean(m_rouge_p),
                 cos_sim=np.mean(m_cos_sim),
-                seq_len=np.mean(np.mean(m_generation_len))
+                seq_len=np.mean(np.mean(m_generation_len)),
+                accuray=(np.mean(accuray))
                 )
+    print(return_dict)
+    return return_dict
 
 
 if __name__ == '__main__':
