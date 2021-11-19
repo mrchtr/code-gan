@@ -187,13 +187,6 @@ models = [
         "stop_on_line_end": True,
         "sequence_len": 128
     },
-{
-        "name": "baseline 1",
-        "description": "gpt2 pretrained for 1 epoch",
-        "model_name": "mrchtr/code-gan/gpt-pretrain:v12",
-        "stop_on_line_end": True,
-        "sequence_len": 128
-    },
     {
         "name": "baseline 2",
         "description": "gpt2 pretrained for 20 epochs",
@@ -367,12 +360,10 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             generated = generated.replace("<pad>", "").strip()
             real = real.replace("<pad>", "").strip()
             _levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
-
-            if len(generated) > 0 and len(real) > 0:
-                score_dict = rouge.get_scores(real, generated)
-                _rouge_r.append(score_dict[0]['rouge-l']['r'])
-                _rouge_f.append(score_dict[0]['rouge-l']['f'])
-                _rouge_p.append(score_dict[0]['rouge-l']['p'])
+            score_dict = rouge.get_scores(real, generated)
+            _rouge_r.append(score_dict[0]['rouge-l']['r'])
+            _rouge_f.append(score_dict[0]['rouge-l']['f'])
+            _rouge_p.append(score_dict[0]['rouge-l']['p'])
 
         # perplexity
         if model_name == "mrchtr/code-gan/model:v116":
