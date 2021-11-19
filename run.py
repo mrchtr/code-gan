@@ -29,14 +29,14 @@ def tokenize_files(source, tokenizer, config):
 
         tokenized_data = []
         print(f"Content len: {len(content)}")
-        #mini_batch = 30000
-        #for i in tqdm(range(0, len(content), mini_batch)):
-        tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
+        mini_batch = 30000
         examples = []
-        for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
-            examples.append(
-                tokenizer.build_inputs_with_special_tokens(tokenized_data[i: i + config.block_size])
-            )
+        for i in tqdm(range(0, len(content), mini_batch)):
+            tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
+            for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
+                examples.append(
+                    tokenizer.build_inputs_with_special_tokens(tokenized_data[i: i + config.block_size])
+                )
     return examples
 
 def load_datasets(config, tokenizer, eos_token_id, pad_token_id):
