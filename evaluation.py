@@ -329,10 +329,11 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             real = real.replace("<EOL>", "").strip()
             _levenstein.append(jellyfish.levenshtein_distance(generated, real) / max(len(real), len(generated)))
 
-            score_dict = rouge.get_scores(real, generated)
-            _rouge_r.append(score_dict[0]['rouge-l']['r'])
-            _rouge_f.append(score_dict[0]['rouge-l']['f'])
-            _rouge_p.append(score_dict[0]['rouge-l']['p'])
+            if len(generated) > 0 and len(real) > 0:
+                score_dict = rouge.get_scores(real, generated)
+                _rouge_r.append(score_dict[0]['rouge-l']['r'])
+                _rouge_f.append(score_dict[0]['rouge-l']['f'])
+                _rouge_p.append(score_dict[0]['rouge-l']['p'])
 
         # perplexity
         if model_name == "mrchtr/code-gan/model:v116":
