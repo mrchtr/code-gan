@@ -34,7 +34,7 @@ def tokenize_files(source, tokenizer, config):
         for i in tqdm(range(0, len(content), mini_batch)):
             tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content[i:i+mini_batch]))
             #for i in range(0, len(tokenized_data) - config.block_size + 1, config.block_size):  # Truncate in block of block_size
-            examples.extend(
+            examples.append(
                 tokenizer.build_inputs_with_special_tokens(tokenized_data)
             )
     return examples
