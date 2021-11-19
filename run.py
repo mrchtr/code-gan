@@ -29,7 +29,7 @@ def tokenize_files(source, tokenizer, config):
 
         tokenized_data = []
         print(f"Content len: {len(content)}")
-        mini_batch = 30000
+        mini_batch = 5000
         examples = []
         for i in tqdm(range(0, len(content), mini_batch)):
             tokenized_data = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(content))
