@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
 
     generator = PretrainedGPTGenerator(config, bos_token=config.eos_token_id)
-    if config.saved_model and config.saved_model != 'GPT-Code':
+    if config.saved_model and config.saved_model != 'GPT-Code' and config.pretraining_epochs == 0:
         artifact = logger.use_artifact(config.saved_model, type='model')
         artifact_dir = artifact.download()
         generator.load_state_dict(torch.load(artifact_dir + '/generator.pth', map_location=torch.device(config.device)))

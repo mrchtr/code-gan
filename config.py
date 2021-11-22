@@ -15,7 +15,7 @@ def init_config():
     # project name in wandb
     config.project_name = "code-gan"
     config.saved_model = 'mrchtr/code-gan/model:v74'
-    #config.saved_model = 'mrchtr/code-gan/model:v60'
+    #config.saved_model = 'mrchtr/code-gan/model:v60' #'mrchtr/code-gan/gpt-pretrain:v30' #
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
 
     # hardware settings
@@ -23,7 +23,7 @@ def init_config():
 
     config.data_dir = "./data/dataset"
     config.training_data = "./data/dataset/out_train.txt"
-    config.validation_data = "./data/dataset/out_eval.txt"
+    config.validation_data = "./data/dataset/out_test.txt"
 
     # architecture settings
 
@@ -70,12 +70,12 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 64 # 64
+    config.batch_size = 48 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
     config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 0
+    config.pretraining_epochs = 5
 
     # GAN training
     config.generator_optimizer = "Adam"
@@ -94,7 +94,7 @@ def init_config():
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
     config.top_k = 5 #5 if top_k == 0 --> random
-    config.warm_up_steps = 2000
+    config.warm_up_steps = 250
 
     # evaluation
     config.baseline_train_epochs = 10
