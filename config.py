@@ -82,7 +82,7 @@ def init_config():
     config.discriminator_optimizer = "Adam"
     config.lr_adv_g = 0.004  # 1e-4
     config.lr_adv_d = 0.004  # 1e-4
-    config.nadv_steps = 10000 #10000
+    config.nadv_steps = 20000 #10000
     config.open_end_generation = True
     config.g_steps = 1
     config.d_steps = 1  # proposed by relgan
@@ -94,7 +94,7 @@ def init_config():
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
     config.top_k = 5 #5 if top_k == 0 --> random
-    config.warm_up_steps = 1500
+    config.warm_up_steps = 2000
 
     # evaluation
     config.baseline_train_epochs = 10
