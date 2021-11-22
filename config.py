@@ -94,7 +94,7 @@ def init_config():
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
     config.top_k = 5 #5 if top_k == 0 --> random
-    config.warm_up_steps = 500
+    config.warm_up_steps = 1500
 
     # evaluation
     config.baseline_train_epochs = 10
