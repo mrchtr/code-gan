@@ -73,9 +73,9 @@ def init_config():
     config.batch_size = 48 # 64
 
     # Pretraining
-    config.pretrain_optimizer = "AdamW"
-    config.lr_pretrain = 5e-5
-    config.pretraining_epochs = 5
+    config.pretrain_optimizer = "Adam"
+    config.lr_pretrain = 1e-3
+    config.pretraining_epochs = 10
 
     # GAN training
     config.generator_optimizer = "Adam"
@@ -94,7 +94,7 @@ def init_config():
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
     config.top_k = 5 #5 if top_k == 0 --> random
-    config.warm_up_steps = 250
+    config.warm_up_steps = 1000
 
     # evaluation
     config.baseline_train_epochs = 10

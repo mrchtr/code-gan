@@ -171,7 +171,7 @@ class Trainer:
 
         print(f"Mean losses: {np.mean(losses)}")
 
-    def adjust_optim(self, optimizer, n_iter):
+    def adjust_optim(self,n_iter):
         """
         adjust learning rate by inverser square root strategy.
         https://paperswithcode.com/method/inverse-square-root-schedule
@@ -180,10 +180,17 @@ class Trainer:
         :return: lr
         """
 
+        return (
+            max(
+                (self.config.warm_up_steps ** 0.5) / (n_iter ** 0.5),
+                0.0001 / self.config.lr_adv_g,
+            )
+            if n_iter > self.config.warm_up_steps
+            else n_iter / self.config.warm_up_steps
+        )
+
         lr = self.config.lr_adv_g / math.sqrt(max(n_iter, self.config.warm_up_steps))
         if n_iter > self.config.warm_up_steps:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
             return lr
         return self.config.lr_adv_g
 
@@ -205,7 +212,10 @@ class Trainer:
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
             lr = self.adjust_optim(generator_optimizer, i)
-            lr = self.adjust_optim(discriminator_optimizer, i)
+            gen_scheduler = torch.optim.lr_scheduler.LambdaLR(generator_optimizer, lr_lambda=lr)
+            dis_scheduler = torch.optim.lr_scheduler.LambdaLR(discriminator_optimizer, lr_lambda=lr)
+            gen_scheduler.step()
+            dis_scheduler.step()
 
             self.logger.log({"generator/loss": loss_g, "discriminator/loss": loss_d,
                              "temperature": self.generator.temperature, "generator/bleu": bleu,
