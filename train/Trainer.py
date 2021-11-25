@@ -211,7 +211,7 @@ class Trainer:
             # update temperature each epoch
             self.generator.temperature = self.update_temperature(self.generator.temperature, i)
 
-            lr = self.adjust_optim(generator_optimizer, i)
+            lr = self.adjust_optim(i)
             gen_scheduler = torch.optim.lr_scheduler.LambdaLR(generator_optimizer, lr_lambda=lr)
             dis_scheduler = torch.optim.lr_scheduler.LambdaLR(discriminator_optimizer, lr_lambda=lr)
             gen_scheduler.step()
