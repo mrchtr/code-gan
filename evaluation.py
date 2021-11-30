@@ -176,11 +176,12 @@ models = [
         "model_name": "mrchtr/code-gan/model:v90",
         "stop_on_line_end": False,
         "sequence_len": 160
-    }
+    },
+
 ]
 
 models = [
-{
+    {
         "name": "baseline lstm",
         "description": "lstm",
         "model_name": "mrchtr/code-gan/model:v116",
@@ -281,6 +282,20 @@ def get_ppl(encodings, config, model):
     return torch.exp(torch.stack(nlls).sum() / end_loc)
 
 
+def rank_mrr(pred, y, k):
+    mrr = []
+    top_k_el = torch.topk(pred, k).indices
+    top_k_el = top_k_el.to('cpu').numpy()
+    y = y[:, -1].to('cpu').numpy()
+    _, xind = np.where(top_k_el == y[:, None])
+    for x in xind:
+        mrr.append(1 / (x + 1))
+    if len(y) - len(xind) > 0:
+        mrr.extend([0] * (len(y) - len(xind)))
+
+    return mrr
+
+
 def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on_line_end=True, break_at=500):
     iteration = 0
     prefix = "evaluation"
@@ -316,6 +331,9 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
     m_cos_sim = []
     m_generation_len = []
     accuray = []
+
+    mrr5 = []
+    mrr10 = []
 
     # run
     dataloader_iter = iter(dataloader)
@@ -377,9 +395,17 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
             ppl = torch.exp(loss)
             nll = math.log(ppl)
 
+            mrr5.extend(rank_mrr(generator(x, (state_h, state_c))[0][:, -1], y, 5))
+            mrr10.extend(rank_mrr(generator(x, (state_h, state_c))[0][:, -1], y, 10))
         else:
             ppl = get_ppl(input, config, generator)
             nll = math.log(ppl)
+
+            pred = generator.step_forward_gumbel(input, gumbel_forward=False, return_dict=True).logits[:, -1]
+            y = batch[..., 1:config.start_sequence_len + 1].to(config.device)
+            mrr5.extend(rank_mrr(pred, y, 5))
+            mrr10.extend(rank_mrr(pred, y, 10))
+            # print()
         # bert embeddings
         generated_embed = bert.roberta(generated_tensor).last_hidden_state
         ground_truth_embed = bert.roberta(ground_truth_tensor).last_hidden_state
@@ -429,13 +455,15 @@ def run_evaluation(logger, config, evaluation, tokenizer, dataset, bert, stop_on
                 })
 
     return_dict = dict(note=run_name, description=description, model_name=model_name, stop_on_line_end=stop_on_line_end,
-                nll=np.mean(m_nll), ppl=np.mean(m_ppl), levenstein=np.mean(m_levenstein),
-                edit_sim=(100 - 100 * np.mean(m_levenstein)),
-                rouge_r=np.mean(m_rouge_r), rouge_f=np.mean(m_rouge_f), rouge_p=np.mean(m_rouge_p),
-                cos_sim=np.mean(m_cos_sim),
-                seq_len=np.mean(np.mean(m_generation_len)),
-                accuray=(np.mean(accuray))
-                )
+                       nll=np.mean(m_nll), ppl=np.mean(m_ppl), levenstein=np.mean(m_levenstein),
+                       edit_sim=(100 - 100 * np.mean(m_levenstein)),
+                       rouge_r=np.mean(m_rouge_r), rouge_f=np.mean(m_rouge_f), rouge_p=np.mean(m_rouge_p),
+                       cos_sim=np.mean(m_cos_sim),
+                       seq_len=np.mean(np.mean(m_generation_len)),
+                       accuray=(np.mean(accuray)),
+                       mrr5=np.mean(mrr5),
+                       mrr10=np.mean(mrr10)
+                       )
     print(return_dict)
     return return_dict
 
