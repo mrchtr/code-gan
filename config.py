@@ -71,7 +71,7 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 32 # 64
+    config.batch_size = 64 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
@@ -94,7 +94,7 @@ def init_config():
     config.freezing_generator = False  # freeze layers of the pretrained generator ?
     config.repetition_penalty = 1.2
     config.sampling = "top_k"
-    config.top_k = 5 #5 if top_k == 0 --> random
+    config.top_k = 0 #5 if top_k == 0 --> random
     config.warm_up_steps = 50
 
     # evaluation
