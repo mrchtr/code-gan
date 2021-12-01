@@ -231,6 +231,23 @@ models = [
         "sequence_len": 128
     }
 ]
+models = [
+{
+        "name": "baseline gpt-medium",
+        "description": "gpt2 pretrained for 20 epochs",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v60",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+{
+        "name": "medium/bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4)",
+        "model_name": "mrchtr/code-gan/model:v139",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+]
+
 
 
 def tokenize_files(source, tokenizer, config):

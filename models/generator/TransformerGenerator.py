@@ -57,7 +57,7 @@ class PretrainedGPTGenerator(Generator, GenerationMixin, ABC):
             self.transformer = AutoModelWithLMHead.from_pretrained("microsoft/CodeGPT-small-py")
         else:
             #gpt-medium
-            self.transformer = GPT2Model.from_pretrained("gpt2", bos_token_id=config.eos_token_id,
+            self.transformer = GPT2Model.from_pretrained("gpt2-medium", bos_token_id=config.eos_token_id,
                                                      eos_token_id=config.eos_token_id, pad_token_id=config.pad_token_id)
         # self.transformer = GPT2Model.from_pretrained(pretrained_model, bos_token_id=bos_token, eos_token_id=bos_token)
         self.config = self.transformer.config
