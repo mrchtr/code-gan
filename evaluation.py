@@ -182,6 +182,20 @@ models = [
 
 models = [
     {
+        "name": "baseline lstm",
+        "description": "lstm",
+        "model_name": "mrchtr/code-gan/model:v116",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
+        "name": "baseline 2",
+        "description": "gpt2 pretrained for 20 epochs",
+        "model_name": "mrchtr/code-gan/gpt-pretrain:v30",
+        "stop_on_line_end": True,
+        "sequence_len": 128
+    },
+    {
         "name": "cnn/rsgan",
         "description": "CNN/RSGAN (#1)",
         "model_name": "mrchtr/code-gan/model:v88",
@@ -208,7 +222,38 @@ models = [
         "model_name": "mrchtr/code-gan/model:v74",
         "stop_on_line_end": True,
         "sequence_len": 128
+    },
+    {
+        "name": "bert/wgan-gp/random",
+        "description": "BERT/WGAN-GP (#4 Random)",
+        "model_name": "mrchtr/code-gan/model:v90",
+        "stop_on_line_end": True,
+        "sequence_len": 128
     }
+]
+models = [
+{
+        "name": "medium/bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4)",
+        "model_name": "mrchtr/code-gan/model:v139",
+        "stop_on_line_end": False,
+        "sequence_len": 96
+    },
+{
+        "name": "medium/bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4)",
+        "model_name": "mrchtr/code-gan/model:v139",
+        "stop_on_line_end": False,
+        "sequence_len": 128
+    },
+{
+        "name": "medium/bert/wgan-gp",
+        "description": "BERT/WGAN-GP (#4)",
+        "model_name": "mrchtr/code-gan/model:v139",
+        "stop_on_line_end": False,
+        "sequence_len": 160
+    },
+
 ]
 
 
