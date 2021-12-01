@@ -15,7 +15,7 @@ def init_config():
     # project name in wandb
     config.project_name = "code-gan"
     #config.saved_model = 'mrchtr/code-gan/model:v74'
-    config.saved_model = 'gpt-pretrain:v60'
+    config.saved_model = 'mrchtr/code-gan/gpt-pretrain:v60'
     #config.saved_model = 'mrchtr/code-gan/model:v60' #'mrchtr/code-gan/gpt-pretrain:v30' #
     config.base_bert_model = 'mrchtr/code-gan/codeberta:v97'
 
@@ -71,7 +71,7 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 48 # 64
+    config.batch_size = 64 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
