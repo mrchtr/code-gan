@@ -71,7 +71,7 @@ def init_config():
     Training parameters
     """
 
-    config.batch_size = 64 # 64
+    config.batch_size = 32 # 64
 
     # Pretraining
     config.pretrain_optimizer = "AdamW"
@@ -99,6 +99,6 @@ def init_config():
 
     # evaluation
     config.baseline_train_epochs = 0
-    config.eval_break_at = 250
+    config.eval_break_at = 500
 
     return config
