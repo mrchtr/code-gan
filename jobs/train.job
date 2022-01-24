@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --job-name=code-gan
+#SBATCH --partition=clara-job
+#SBATCH --time=72:00:00
+#SBATCH --gres=gpu:v100:1
+#SBATCH --mem-per-cpu=10G
+
+
+module load Python
+#module load PyTorch
+#module load Anaconda3
+
+#
+cd /work/users/mi144quky
+dir=$RANDOM
+mkdir $dir
+cd $dir
+
+# clone repository and checkout newest version
+git clone https://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@github.com/mrchtr/code-gan.git
+cd code-gan
+git checkout clean-up
+
+# getting data
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1tjz92ShC3gwklJwNMr7nGJEXF6TvCS5X' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1tjz92ShC3gwklJwNMr7nGJEXF6TvCS5X" -O out_eval.txt && rm -rf /tmp/cookies.txt
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=13x-PzszXLCuf3-9132RjLVa5HGKA4eWB' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=13x-PzszXLCuf3-9132RjLVa5HGKA4eWB" -O out_train.txt && rm -rf /tmp/cookies.txt
+
+mv out_eval.txt ./data/dataset/out_eval.txt
+mv out_train.txt ./data/dataset/out_train.txt
+
+# prepare venv and install dependencies
+#conda env update -n code-gan -f environments.yml
+#source /nfs/cluster/easybuild/software/Anaconda3/2020.02/etc/profile.d/conda.sh
+#conda activate code-gan
+pip install --user -r requirements.txt
+#pip install --user transformers
+#pip install --user packaging
+#pip install --user pytz
+module load CUDA
+
+
+# login to wandb
+pip install wandb
+wandb login 61c2320b5e0b3ff1e63f99f0f87409a917645546
+
+# run training
+python -u run.py

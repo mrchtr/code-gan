@@ -12,33 +12,51 @@ class TextDataset(Dataset):
     Dataset for training the gan. Holding tokenized text.
     """
 
-    def __init__(self, block_size, inp):
+    def __init__(self, block_size, inp, eos_token_id=2, pad_token_id=None):
         """
         :param block_size: size of sequences
         :param inp: input tokens as vector representation
         """
 
+        self.eos_token_id = eos_token_id
+        self.pad_token_id = pad_token_id
         self.block_size = block_size
         self.data = inp
+
 
     def __len__(self):
         return len(self.data) - self.block_size
 
     def __getitem__(self, index):
-        offset = index + self.block_size
-        return (
-            torch.tensor(self.data[index:offset]),
-            torch.tensor(self.data[index+1:offset+1]),
-        )
+        return torch.tensor(self.data[index], dtype=torch.long)
+
+
+
+    def get_random_context_with_ground_truth(self, batch_size, start_len, seq_len, is_eval = False):
+        ground_truth_len = seq_len - start_len
+        context = []
+        ground_truth = []
+        for _ in range(batch_size):
+            sample = self.__get_random_sample()  # full max len sample (context, ground_truth)
+            context.append(sample[0:start_len])  # build context
+
+            _ground_truth = sample[start_len:seq_len]
+            if is_eval and self.eos_token_id in _ground_truth:
+                # get index of <EOL> token
+                index = _ground_truth.index(self.eos_token_id) + 1
+                # slicing after + fill of with <EOL> tokens
+                _ground_truth = _ground_truth[0:index] + [self.pad_token_id] * (ground_truth_len - index)
+            #_ground_truth = sample[0:start_len] + _ground_truth
+            ground_truth.append(_ground_truth)
+        return torch.tensor(context), torch.tensor(ground_truth)
 
     def get_random_real_sample(self, batch_size, seq_len):
         samples = [self.__get_random_sample(seq_len) for _ in range(batch_size)]
         return torch.tensor(samples)
 
-    def __get_random_sample(self, seq_len):
-        max_len = self.__len__() - seq_len - 1
-        rand = randint(0, max_len)
-        return self.data[rand:rand+seq_len]
+    def __get_random_sample(self):
+        rand = randint(0, len(self.data) - self.block_size)
+        return self.data[rand]
 
 class CodeDataset(Dataset):
     """

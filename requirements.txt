@@ -1,11 +1,14 @@
-torch
+torch==1.8.0
+torchvision
 tqdm
 transformers
 sentencepiece
 nltk
 wandb
-torchtext
+torchtext==0.8.0
 datasets
 aiohttp
 jellyfish
 scikit-learn
+GitPython
+rouge

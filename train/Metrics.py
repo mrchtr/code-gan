@@ -9,8 +9,8 @@ import jellyfish
 class Metrics:
     def __init__(self, max_len):
         # init bert model
-        self.tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-        self.model = AutoModel.from_pretrained("microsoft/codebert-base")
+        #self.tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
+        #self.model = AutoModel.from_pretrained("microsoft/codebert-base")
         self.model.eval()
 
         self.smoothie = SmoothingFunction().method4
