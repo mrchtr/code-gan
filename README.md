@@ -38,7 +38,7 @@ Afterwards, the whole dataset will be tokenized.
 
 To run the generator train change the configuration file and run the following: 
 ```
-python3 train.py -...
+python3 train.py
 ```
 
 Pseudo Code:
@@ -75,7 +75,6 @@ for n in steps:
     loss_g, _ = get_losses(discriminator_real_out, discriminator_fake_out)
  ```
 
-## Generate code suggestions
 
 
 
